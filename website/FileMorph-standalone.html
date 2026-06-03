@@ -412,7 +412,7 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
           <div class="demo-drop-inner">
             <div class="demo-drop-icon">⬆️</div>
             <p><strong>Drop an image here</strong> or <button type="button" class="link-btn" id="browseBtn">browse</button></p>
-            <small>PNG · JPG · WebP — converted locally with the Canvas API</small>
+            <small>PNG · JPG · WebP · PDF — converted locally, no upload</small>
           </div>
         </div>
 
@@ -423,6 +423,7 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
               <option value="image/png">PNG</option>
               <option value="image/jpeg">JPG</option>
               <option value="image/webp">WebP</option>
+              <option value="application/pdf">PDF</option>
             </select>
           </label>
           <label id="qualityWrap">
@@ -655,7 +656,87 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   }
 
   function extFor(mime) {
-    return { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[mime] || "img";
+    return {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/webp": "webp",
+      "application/pdf": "pdf"
+    }[mime] || "img";
+  }
+
+  // Build a valid single-page PDF embedding a JPEG — pure JS, fully offline.
+  function buildImagePdf(jpeg, w, h) {
+    var enc = new TextEncoder();
+    var parts = [];
+    var pos = 0;
+    var offsets = [];
+    function push(bytes) { parts.push(bytes); pos += bytes.length; }
+    function pushStr(s) { push(enc.encode(s)); }
+    function mark(n) { offsets[n] = pos; }
+
+    var content = "q " + w + " 0 0 " + h + " 0 0 cm /Im0 Do Q";
+    var contentBytes = enc.encode(content);
+
+    pushStr("%PDF-1.3\n");
+    mark(1);
+    pushStr("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    mark(2);
+    pushStr("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+    mark(3);
+    pushStr(
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + w + " " + h +
+      "] /Resources << /XObject << /Im0 4 0 R >> /ProcSet [/PDF /ImageC] >> /Contents 5 0 R >>\nendobj\n"
+    );
+    mark(4);
+    pushStr(
+      "4 0 obj\n<< /Type /XObject /Subtype /Image /Width " + w + " /Height " + h +
+      " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpeg.length + " >>\nstream\n"
+    );
+    push(jpeg);
+    pushStr("\nendstream\nendobj\n");
+    mark(5);
+    pushStr("5 0 obj\n<< /Length " + contentBytes.length + " >>\nstream\n");
+    push(contentBytes);
+    pushStr("\nendstream\nendobj\n");
+
+    var xrefPos = pos;
+    var xref = "xref\n0 6\n0000000000 65535 f \n";
+    for (var i = 1; i <= 5; i++) {
+      xref += ("0000000000" + offsets[i]).slice(-10) + " 00000 n \n";
+    }
+    pushStr(xref);
+    pushStr("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF");
+
+    var total = 0;
+    parts.forEach(function (p) { total += p.length; });
+    var out = new Uint8Array(total);
+    var o = 0;
+    parts.forEach(function (p) { out.set(p, o); o += p.length; });
+    return new Blob([out], { type: "application/pdf" });
+  }
+
+  function renderResult(blob, ext) {
+    var url = URL.createObjectURL(blob);
+    resultBox.innerHTML = "";
+    if (ext === "pdf") {
+      var icon = document.createElement("div");
+      icon.style.fontSize = "2.6rem";
+      icon.textContent = "📄";
+      resultBox.appendChild(icon);
+    } else {
+      var out = new Image();
+      out.src = url;
+      resultBox.appendChild(out);
+    }
+    var meta = document.createElement("small");
+    meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
+    var dl = document.createElement("a");
+    dl.href = url;
+    dl.download = currentName + "." + ext;
+    dl.className = "btn btn-primary btn-sm";
+    dl.textContent = "Download ." + ext;
+    resultBox.appendChild(meta);
+    resultBox.appendChild(dl);
   }
 
   function loadFile(file) {
@@ -689,11 +770,29 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
     canvas.height = currentImage.height;
     var ctx = canvas.getContext("2d");
     // White backdrop for formats without alpha (JPG)
-    if (mime === "image/jpeg") {
+    if (mime === "image/jpeg" || mime === "application/pdf") {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     ctx.drawImage(currentImage, 0, 0);
+
+    if (mime === "application/pdf") {
+      canvas.toBlob(
+        function (jpg) {
+          if (!jpg) {
+            resultBox.textContent = "Couldn't render the PDF in this browser.";
+            return;
+          }
+          jpg.arrayBuffer().then(function (buf) {
+            var pdf = buildImagePdf(new Uint8Array(buf), currentImage.width, currentImage.height);
+            renderResult(pdf, "pdf");
+          });
+        },
+        "image/jpeg",
+        quality
+      );
+      return;
+    }
 
     canvas.toBlob(
       function (blob) {
@@ -701,21 +800,7 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
           resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG.";
           return;
         }
-        var url = URL.createObjectURL(blob);
-        var ext = extFor(mime);
-        resultBox.innerHTML = "";
-        var out = new Image();
-        out.src = url;
-        var meta = document.createElement("small");
-        meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
-        var dl = document.createElement("a");
-        dl.href = url;
-        dl.download = currentName + "." + ext;
-        dl.className = "btn btn-primary btn-sm";
-        dl.textContent = "Download ." + ext;
-        resultBox.appendChild(out);
-        resultBox.appendChild(meta);
-        resultBox.appendChild(dl);
+        renderResult(blob, extFor(mime));
       },
       mime,
       quality
