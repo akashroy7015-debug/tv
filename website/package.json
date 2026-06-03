@@ -1,0 +1,11 @@
+{
+  "name": "filemorph-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "FileMorph web converter — frontend + Stripe/Supabase serverless API",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "stripe": "^16.12.0"
+  }
+}

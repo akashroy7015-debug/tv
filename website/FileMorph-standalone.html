@@ -626,25 +626,125 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
 
   <div class="toast" id="toast" hidden></div>
 
-  <script>
-// ===== FileMorph — web converter with free quota, login & plans =====
+<script>
+// ===== FileMorph runtime config =====
+// DEMO by default so the site works with no backend.
+// To go LIVE with real accounts + payments: deploy to Vercel + Supabase (see DEPLOY.md),
+// then set mode:"live" and fill the two Supabase values below.
+window.FM_CONFIG = {
+  mode: "demo",                       // "demo" or "live"
+  supabaseUrl: "",                    // e.g. https://xxxx.supabase.co
+  supabaseAnonKey: "",               // Supabase anon/public key (safe in frontend)
+  checkoutEndpoint: "/api/create-checkout-session",
+  plans: { Pro: 9, Team: 29 }
+};
+
+</script>
+<script>
+// ===== FileMorph backend abstraction =====
+// Provides window.FMBackend with a uniform API used by script.js.
+// Two implementations: DEMO (localStorage, no server) and LIVE (Supabase auth + Stripe checkout).
+(function () {
+  "use strict";
+  var cfg = window.FM_CONFIG || { mode: "demo" };
+  var LIVE = cfg.mode === "live" && cfg.supabaseUrl && cfg.supabaseAnonKey;
+
+  /* ---------- DEMO backend (client-only) ---------- */
+  function DemoBackend() {
+    var LS = "fm_user";
+    function get() { try { return JSON.parse(localStorage.getItem(LS)); } catch (e) { return null; } }
+    function set(u) { try { localStorage.setItem(LS, JSON.stringify(u)); } catch (e) {} }
+    return {
+      live: false,
+      demo: true,
+      ready: Promise.resolve(),
+      user: function () { return get(); },
+      isPaid: function () { var u = get(); return !!(u && u.plan && u.plan !== "free"); },
+      signIn: function (email) { var u = get() || {}; u.email = email; u.plan = u.plan || "free"; set(u); return Promise.resolve(u); },
+      logout: function () { try { localStorage.removeItem(LS); } catch (e) {} return Promise.resolve(); },
+      // demo "purchase" just flips the local plan (the fake card modal calls this)
+      purchase: function (plan) { var u = get() || {}; u.plan = plan; set(u); return Promise.resolve({ done: true }); },
+      refresh: function () { return Promise.resolve(); }
+    };
+  }
+
+  /* ---------- LIVE backend (Supabase + Stripe) ---------- */
+  function LiveBackend() {
+    var sb = null, currentUser = null, sub = null;
+    function paid() { return !!(sub && (sub.status === "active" || sub.status === "trialing")); }
+    var ready = (async function () {
+      var mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+      sb = mod.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      var s = await sb.auth.getSession();
+      currentUser = s.data.session ? s.data.session.user : null;
+      if (currentUser) await loadSub();
+      sb.auth.onAuthStateChange(function (_e, session) { currentUser = session ? session.user : null; });
+    })();
+    async function loadSub() {
+      if (!currentUser) { sub = null; return; }
+      try {
+        var r = await sb.from("subscriptions").select("plan,status").eq("user_id", currentUser.id).maybeSingle();
+        sub = r.data || null;
+      } catch (e) { sub = null; }
+    }
+    return {
+      live: true,
+      demo: false,
+      ready: ready,
+      user: function () {
+        if (!currentUser) return null;
+        return { email: currentUser.email, id: currentUser.id, plan: paid() ? sub.plan : "free" };
+      },
+      isPaid: paid,
+      signIn: async function (email, password) {
+        var r = await sb.auth.signInWithPassword({ email: email, password: password });
+        if (r.error) {
+          var up = await sb.auth.signUp({ email: email, password: password });
+          if (up.error) throw up.error;
+          if (!up.data.session) throw new Error("Account created — check your email to confirm, then log in.");
+        }
+        var u = await sb.auth.getUser();
+        currentUser = u.data.user;
+        await loadSub();
+        return this.user();
+      },
+      logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; },
+      purchase: async function (plan) {
+        var res = await fetch(cfg.checkoutEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: plan, userId: currentUser ? currentUser.id : null, email: currentUser ? currentUser.email : null })
+        });
+        var data = await res.json();
+        if (data && data.url) { window.location.href = data.url; return { redirect: true }; }
+        throw new Error((data && data.error) || "Could not start checkout");
+      },
+      refresh: loadSub
+    };
+  }
+
+  window.FMBackend = LIVE ? LiveBackend() : DemoBackend();
+})();
+
+</script>
+<script>
+// ===== FileMorph — web converter (free quota, login & plans via FMBackend) =====
 (function () {
   "use strict";
 
   var FREE_LIMIT = 5;
-  var LS_USER = "fm_user";
   var LS_USED = "fm_free_used";
+  var B = window.FMBackend; // demo or live backend
 
-  /* ---------- tiny helpers ---------- */
+  /* ---------- helpers ---------- */
   function $(id) { return document.getElementById(id); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-  function getUser() { try { return JSON.parse(lsGet(LS_USER)); } catch (e) { return null; } }
-  function setUser(u) { lsSet(LS_USER, JSON.stringify(u)); }
-  function isPaid() { var u = getUser(); return !!(u && u.plan && u.plan !== "free"); }
   function used() { return parseInt(lsGet(LS_USED) || "0", 10); }
   function bumpUsed() { lsSet(LS_USED, String(used() + 1)); }
   function freeLeft() { return Math.max(0, FREE_LIMIT - used()); }
+  function isPaid() { return B.isPaid(); }
+  function getUser() { return B.user(); }
   function humanSize(b) {
     if (b < 1024) return b + " B";
     if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
@@ -653,51 +753,30 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
 
   /* ---------- category config ---------- */
   var CATS = {
-    image: {
-      accept: "image/*", real: true,
-      hint: "PNG · JPG · WebP · PDF — converted locally, no upload",
-      formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"]],
-      note: ""
-    },
-    document: {
-      accept: ".pdf,.docx,.doc,.txt,.odt,.epub,.rtf", real: false,
-      hint: "PDF · DOCX · TXT · EPUB — processed on FileMorph's servers",
-      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["txt", "TXT"], ["epub", "EPUB"]],
-      note: "Document conversions run on FileMorph's secure servers. Included with any plan."
-    },
-    video: {
-      accept: "video/*", real: false,
-      hint: "MP4 · WebM · MOV · MKV — processed on FileMorph's servers",
-      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"]],
-      note: "Video conversions run on FileMorph's secure servers. Included with any plan."
-    },
-    audio: {
-      accept: "audio/*", real: false,
-      hint: "MP3 · WAV · AAC · FLAC — processed on FileMorph's servers",
-      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["flac", "FLAC"]],
-      note: "Audio conversions run on FileMorph's secure servers. Included with any plan."
-    },
-    email: {
-      accept: ".eml,.msg,.mbox,.pst", real: false,
-      hint: "EML · MSG · MBOX → PDF / HTML — processed on FileMorph's servers",
-      formats: [["pdf", "PDF"], ["html", "HTML"]],
-      note: "Email conversions run on FileMorph's secure servers. Included with any plan."
-    }
+    image: { accept: "image/*", real: true, hint: "PNG · JPG · WebP · PDF — converted locally, no upload",
+      formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"]], note: "" },
+    document: { accept: ".pdf,.docx,.doc,.txt,.odt,.epub,.rtf", real: false, hint: "PDF · DOCX · TXT · EPUB — processed on FileMorph's servers",
+      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["txt", "TXT"], ["epub", "EPUB"]], note: "Document conversions run on FileMorph's servers. Included with any plan." },
+    video: { accept: "video/*", real: false, hint: "MP4 · WebM · MOV · MKV — processed on FileMorph's servers",
+      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"]], note: "Video conversions run on FileMorph's servers. Included with any plan." },
+    audio: { accept: "audio/*", real: false, hint: "MP3 · WAV · AAC · FLAC — processed on FileMorph's servers",
+      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["flac", "FLAC"]], note: "Audio conversions run on FileMorph's servers. Included with any plan." },
+    email: { accept: ".eml,.msg,.mbox,.pst", real: false, hint: "EML · MSG · MBOX → PDF / HTML — processed on FileMorph's servers",
+      formats: [["pdf", "PDF"], ["html", "HTML"]], note: "Email conversions run on FileMorph's servers. Included with any plan." }
   };
   var currentCat = "image";
 
-  /* ---------- element refs ---------- */
-  var navToggle = $("navToggle"), navLinks = document.querySelector(".nav-links");
-  var navAccount = $("navAccount"), loginBtn = $("loginBtn");
+  /* ---------- refs ---------- */
+  var navToggle = $("navToggle"), navLinks = document.querySelector(".nav-links"), navAccount = $("navAccount");
   var catTabs = $("catTabs"), usageText = $("usageText"), upgradeLink = $("upgradeLink"), catNote = $("catNote");
   var dropZone = $("dropZone"), fileInput = $("fileInput"), browseBtn = $("browseBtn"), dropHint = $("dropHint");
   var formatSelect = $("formatSelect"), qualityRange = $("qualityRange"), qualityVal = $("qualityVal"), qualityWrap = $("qualityWrap");
   var convertBtn = $("convertBtn"), previewWrap = $("previewWrap"), previewImg = $("previewImg"), origMeta = $("origMeta"), resultBox = $("resultBox");
-  var authModal = $("authModal"), authForm = $("authForm"), authEmail = $("authEmail");
+  var authModal = $("authModal"), authForm = $("authForm"), authEmail = $("authEmail"), authPass = $("authPass");
   var planModal = $("planModal"), planForm = $("planForm"), planSub = $("planSub");
   var toast = $("toast");
 
-  /* ---------- mobile nav ---------- */
+  /* ---------- nav ---------- */
   if (navToggle && navLinks) {
     navToggle.addEventListener("click", function () { navLinks.classList.toggle("open"); });
     navLinks.addEventListener("click", function (e) { if (e.target.tagName === "A") navLinks.classList.remove("open"); });
@@ -708,24 +787,28 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   function showToast(msg) {
     toast.textContent = msg; toast.hidden = false; toast.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toast.classList.remove("show"); setTimeout(function () { toast.hidden = true; }, 300); }, 2800);
+    toastTimer = setTimeout(function () { toast.classList.remove("show"); setTimeout(function () { toast.hidden = true; }, 300); }, 3000);
   }
 
   /* ---------- account UI ---------- */
   function renderAccount() {
     var u = getUser();
+    navAccount.innerHTML = "";
     if (u) {
-      navAccount.innerHTML = "";
       var chip = document.createElement("span");
       chip.className = "account-chip";
-      chip.innerHTML = '<strong>' + (u.plan && u.plan !== "free" ? u.plan : "Free") + '</strong> · ' + u.email;
+      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email;
       var out = document.createElement("button");
       out.className = "btn btn-ghost btn-sm"; out.textContent = "Log out";
-      out.addEventListener("click", function () { try { localStorage.removeItem(LS_USER); } catch (e) {} renderAccount(); renderUsage(); showToast("Logged out"); });
+      out.addEventListener("click", function () { B.logout().then(function () { renderAccount(); renderUsage(); showToast("Logged out"); }); });
       navAccount.appendChild(chip); navAccount.appendChild(out);
     } else {
-      navAccount.innerHTML = '<button class="btn btn-ghost btn-sm" id="loginBtn">Log in</button><a href="#convert" class="btn btn-primary btn-sm">Start free</a>';
-      $("loginBtn").addEventListener("click", function () { openAuth(); });
+      var login = document.createElement("button");
+      login.className = "btn btn-ghost btn-sm"; login.textContent = "Log in";
+      login.addEventListener("click", function () { openAuth(); });
+      var start = document.createElement("a");
+      start.className = "btn btn-primary btn-sm"; start.href = "#convert"; start.textContent = "Start free";
+      navAccount.appendChild(login); navAccount.appendChild(start);
     }
   }
 
@@ -733,8 +816,7 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   function renderUsage() {
     if (isPaid()) {
       usageText.innerHTML = "✨ <strong>Unlimited</strong> conversions on your " + getUser().plan + " plan";
-      upgradeLink.hidden = true;
-      return;
+      upgradeLink.hidden = true; return;
     }
     var left = freeLeft();
     usageText.innerHTML = "Free conversions left: <strong>" + left + " / " + FREE_LIMIT + "</strong>";
@@ -746,49 +828,54 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   function closeModal(m) { m.hidden = true; document.body.style.overflow = ""; }
   document.addEventListener("click", function (e) {
     if (e.target.hasAttribute && e.target.hasAttribute("data-close")) { closeModal(authModal); closeModal(planModal); }
-    if (e.target.classList && e.target.classList.contains("modal-overlay")) { closeModal(e.target); }
+    if (e.target.classList && e.target.classList.contains("modal-overlay")) closeModal(e.target);
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(authModal); closeModal(planModal); } });
-
   function openAuth() { openModal(authModal); setTimeout(function () { authEmail.focus(); }, 50); }
-  var pendingPlan = null;
-  function openPlan(plan, price) {
-    pendingPlan = plan;
-    planSub.textContent = plan + " — $" + price + "/mo, unlimited conversions. Cancel anytime.";
-    $("payBtn").textContent = "Subscribe to " + plan + " — $" + price + "/mo";
-    openModal(planModal);
+
+  var pendingPlan = null;      // {plan, price} to resume after login
+  var planModalPlan = null;    // plan being confirmed in the demo card modal
+
+  // Choose a plan: ensure logged in, then checkout (Stripe in live, fake card modal in demo).
+  function choosePlan(plan, price) {
+    if (!getUser()) { pendingPlan = { plan: plan, price: price }; openAuth(); return; }
+    if (B.demo) {
+      planModalPlan = plan;
+      planSub.textContent = plan + " — $" + price + "/mo, unlimited conversions. Cancel anytime.";
+      $("payBtn").textContent = "Subscribe to " + plan + " — $" + price + "/mo";
+      openModal(planModal);
+    } else {
+      showToast("Redirecting to secure checkout…");
+      B.purchase(plan).catch(function (err) { showToast(err.message || "Checkout failed"); });
+    }
   }
 
   authForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    var u = getUser() || {};
-    u.email = authEmail.value.trim(); u.plan = u.plan || "free";
-    setUser(u); closeModal(authModal); renderAccount(); renderUsage();
-    showToast("Welcome, " + u.email);
-    // If they were sent here by the paywall, continue to plan selection
-    if (freeLeft() <= 0 && !isPaid()) { openPlan("Pro", 9); }
+    B.signIn(authEmail.value.trim(), authPass.value).then(function (u) {
+      closeModal(authModal); renderAccount(); renderUsage();
+      showToast("Welcome, " + u.email);
+      if (pendingPlan) { var p = pendingPlan; pendingPlan = null; choosePlan(p.plan, p.price); }
+    }).catch(function (err) { showToast(err.message || "Sign-in failed"); });
   });
 
+  // Demo card modal → flip plan locally.
   planForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    var u = getUser();
-    if (!u) { closeModal(planModal); openAuth(); return; }
-    u.plan = pendingPlan || "Pro"; setUser(u);
-    closeModal(planModal); renderAccount(); renderUsage();
-    showToast("🎉 You're on " + u.plan + " — convert without limits!");
+    B.purchase(planModalPlan || "Pro").then(function () {
+      closeModal(planModal); renderAccount(); renderUsage();
+      showToast("🎉 You're on " + (getUser().plan) + " — convert without limits!");
+    });
   });
 
-  // Plan buttons in the pricing section
   document.querySelectorAll("[data-plan]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var plan = btn.getAttribute("data-plan");
-      if (plan === "free") { document.getElementById("convert").scrollIntoView({ behavior: "smooth" }); return; }
-      var price = btn.getAttribute("data-price") || "9";
-      if (!getUser()) { openAuth(); pendingPlan = plan; return; }
-      openPlan(plan, price);
+      if (plan === "free") { $("convert").scrollIntoView({ behavior: "smooth" }); return; }
+      choosePlan(plan, parseInt(btn.getAttribute("data-price") || "9", 10));
     });
   });
-  upgradeLink.addEventListener("click", function () { if (!getUser()) { openAuth(); } else { openPlan("Pro", 9); } });
+  upgradeLink.addEventListener("click", function () { choosePlan("Pro", (window.FM_CONFIG.plans && window.FM_CONFIG.plans.Pro) || 9); });
 
   /* ---------- category tabs ---------- */
   function applyCategory(cat) {
@@ -801,32 +888,22 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
     c.formats.forEach(function (f) { var o = document.createElement("option"); o.value = f[0]; o.textContent = f[1]; formatSelect.appendChild(o); });
     catNote.hidden = !c.note; catNote.textContent = c.note ? "ℹ️ " + c.note : "";
     qualityWrap.style.display = c.real ? "" : "none";
-    // reset selection
     currentFile = null; currentImage = null; convertBtn.disabled = true;
     previewWrap.hidden = true; resultBox.textContent = "Convert to see the output here.";
   }
-  catTabs.addEventListener("click", function (e) {
-    var t = e.target.closest(".cat-tab"); if (!t) return;
-    applyCategory(t.getAttribute("data-cat"));
-  });
+  catTabs.addEventListener("click", function (e) { var t = e.target.closest(".cat-tab"); if (t) applyCategory(t.getAttribute("data-cat")); });
 
   /* ---------- file handling ---------- */
   var currentFile = null, currentImage = null, currentName = "file";
   function loadFile(file) {
     if (!file) return;
-    currentFile = file;
-    currentName = (file.name || "file").replace(/\.[^.]+$/, "");
-    convertBtn.disabled = false;
-    previewWrap.hidden = false;
-    resultBox.textContent = "Ready — hit Convert.";
+    currentFile = file; currentName = (file.name || "file").replace(/\.[^.]+$/, "");
+    convertBtn.disabled = false; previewWrap.hidden = false; resultBox.textContent = "Ready — hit Convert.";
     if (file.type.indexOf("image/") === 0) {
       var reader = new FileReader();
       reader.onload = function (e) {
         var img = new Image();
-        img.onload = function () {
-          currentImage = img; previewImg.style.display = ""; previewImg.src = e.target.result;
-          origMeta.textContent = img.width + " × " + img.height + " · " + humanSize(file.size);
-        };
+        img.onload = function () { currentImage = img; previewImg.style.display = ""; previewImg.src = e.target.result; origMeta.textContent = img.width + " × " + img.height + " · " + humanSize(file.size); };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
@@ -835,9 +912,8 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
       origMeta.innerHTML = "📎 <strong>" + (file.name || "file") + "</strong> · " + humanSize(file.size);
     }
   }
-
   browseBtn.addEventListener("click", function () { fileInput.click(); });
-  dropZone.addEventListener("click", function (e) { if (e.target === browseBtn) return; fileInput.click(); });
+  dropZone.addEventListener("click", function (e) { if (e.target !== browseBtn) fileInput.click(); });
   fileInput.addEventListener("change", function () { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
   ["dragenter", "dragover"].forEach(function (ev) { dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.add("dragover"); }); });
   ["dragleave", "drop"].forEach(function (ev) { dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.remove("dragover"); }); });
@@ -847,46 +923,37 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   /* ---------- gating + convert ---------- */
   convertBtn.addEventListener("click", function () {
     if (!currentFile) return;
-    if (!isPaid()) {
-      if (freeLeft() <= 0) {
-        showToast("You've used your free conversions — pick a plan to continue.");
-        if (!getUser()) { openAuth(); } else { openPlan("Pro", 9); }
-        return;
-      }
+    if (!isPaid() && freeLeft() <= 0) {
+      showToast("You've used your free conversions — pick a plan to continue.");
+      choosePlan("Pro", (window.FM_CONFIG.plans && window.FM_CONFIG.plans.Pro) || 9);
+      return;
     }
     doConvert();
     if (!isPaid()) { bumpUsed(); renderUsage(); }
   });
-
   function doConvert() {
-    if (CATS[currentCat].real && currentImage) { convertImage(); }
-    else { showServerResult(); }
+    if (CATS[currentCat].real && currentImage) convertImage();
+    else showServerResult();
   }
-
   function showServerResult() {
     var ext = formatSelect.value;
     resultBox.innerHTML = "";
     var icon = document.createElement("div"); icon.style.fontSize = "2.4rem"; icon.textContent = "🗂️";
-    var msg = document.createElement("p");
-    msg.style.margin = "6px 0"; msg.style.color = "var(--text)";
+    var msg = document.createElement("p"); msg.style.margin = "6px 0"; msg.style.color = "var(--text)";
     msg.innerHTML = "Queued: <strong>" + (currentFile.name || "file") + " → ." + ext + "</strong>";
-    var sub = document.createElement("small");
-    sub.textContent = "This format is processed on FileMorph's servers. Connect the conversion backend to enable live download.";
+    var sub = document.createElement("small"); sub.textContent = "This format is processed on FileMorph's servers. Connect the conversion backend to enable live download.";
     resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
   }
 
-  /* ---------- real image converter (Canvas) ---------- */
+  /* ---------- real image converter ---------- */
   function extFor(mime) { return { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" }[mime] || "img"; }
-
   function convertImage() {
-    var mime = formatSelect.value;
-    var quality = parseInt(qualityRange.value, 10) / 100;
+    var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
     var canvas = document.createElement("canvas");
     canvas.width = currentImage.width; canvas.height = currentImage.height;
     var ctx = canvas.getContext("2d");
     if (mime === "image/jpeg" || mime === "application/pdf") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     ctx.drawImage(currentImage, 0, 0);
-
     if (mime === "application/pdf") {
       canvas.toBlob(function (jpg) {
         if (!jpg) { resultBox.textContent = "Couldn't render the PDF in this browser."; return; }
@@ -899,7 +966,6 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
       renderResult(blob, extFor(mime));
     }, mime, quality);
   }
-
   function renderResult(blob, ext) {
     var url = URL.createObjectURL(blob);
     resultBox.innerHTML = "";
@@ -909,8 +975,6 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
     var dl = document.createElement("a"); dl.href = url; dl.download = currentName + "." + ext; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + ext;
     resultBox.appendChild(meta); resultBox.appendChild(dl);
   }
-
-  // Build a valid single-page PDF embedding a JPEG — pure JS, fully offline.
   function buildImagePdf(jpeg, w, h) {
     var enc = new TextEncoder(); var parts = [], pos = 0, offsets = [];
     function push(b) { parts.push(b); pos += b.length; }
@@ -925,17 +989,28 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
     push(jpeg); pushStr("\nendstream\nendobj\n");
     mark(5); pushStr("5 0 obj\n<< /Length " + cb.length + " >>\nstream\n"); push(cb); pushStr("\nendstream\nendobj\n");
     var xrefPos = pos; var xref = "xref\n0 6\n0000000000 65535 f \n";
-    for (var i = 1; i <= 5; i++) { xref += ("0000000000" + offsets[i]).slice(-10) + " 00000 n \n"; }
+    for (var i = 1; i <= 5; i++) xref += ("0000000000" + offsets[i]).slice(-10) + " 00000 n \n";
     pushStr(xref); pushStr("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF");
     var total = 0; parts.forEach(function (p) { total += p.length; });
     var out = new Uint8Array(total); var o = 0; parts.forEach(function (p) { out.set(p, o); o += p.length; });
     return new Blob([out], { type: "application/pdf" });
   }
 
+  /* ---------- checkout return ---------- */
+  function handleReturn() {
+    if (location.search.indexOf("checkout=success") !== -1) {
+      B.refresh().then(function () { renderAccount(); renderUsage(); showToast("🎉 Subscription active — convert without limits!"); });
+      history.replaceState({}, "", location.pathname + location.hash);
+    } else if (location.search.indexOf("checkout=cancel") !== -1) {
+      showToast("Checkout canceled — no charge made.");
+      history.replaceState({}, "", location.pathname + location.hash);
+    }
+  }
+
   /* ---------- init ---------- */
-  renderAccount();
-  renderUsage();
-  applyCategory("image");
+  B.ready.then(function () {
+    renderAccount(); renderUsage(); applyCategory("image"); handleReturn();
+  });
 })();
 
 </script>
