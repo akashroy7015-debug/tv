@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FileMorph — Convert Anything, Locally</title>
+  <meta name="description" content="FileMorph is a privacy-first desktop app that converts 3,000+ document, image, video, audio and email formats — entirely offline. Your files never leave your device." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="site-header" id="top">
+    <div class="container nav">
+      <a href="#top" class="brand">
+        <span class="brand-mark">◈</span>
+        <span class="brand-name">FileMorph</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#tools">Tools</a>
+        <a href="#try">Try it</a>
+        <a href="#features">Features</a>
+        <a href="#formats">Formats</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a href="#pricing" class="btn btn-primary btn-sm">Get FileMorph</a>
+      <button class="nav-toggle" aria-label="Toggle menu" id="navToggle">☰</button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Mac · Windows · Linux</span>
+        <h1>Convert anything.<br /><span class="accent">Right on your device.</span></h1>
+        <p class="lede">
+          FileMorph handles <strong>3,000+</strong> document, image, video, audio and email
+          conversions in one app — and it all runs <strong>100% offline</strong>.
+          No uploads. No tracking. Your files never leave your machine.
+        </p>
+        <div class="hero-actions">
+          <a href="#pricing" class="btn btn-primary">Download FileMorph</a>
+          <a href="#try" class="btn btn-ghost">Try the live demo ↓</a>
+        </div>
+        <ul class="hero-trust">
+          <li>✓ Zero telemetry</li>
+          <li>✓ Batch conversions</li>
+          <li>✓ Works fully offline</li>
+        </ul>
+      </div>
+      <div class="hero-card">
+        <div class="window">
+          <div class="window-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="window-title">FileMorph</span>
+          </div>
+          <div class="window-body">
+            <div class="drop-illustration">
+              <div class="file-chip">photo.heic</div>
+              <div class="file-chip">report.docx</div>
+              <div class="file-chip">clip.mov</div>
+              <div class="arrow">→</div>
+              <div class="file-chip out">photo.jpg</div>
+              <div class="file-chip out">report.pdf</div>
+              <div class="file-chip out">clip.mp4</div>
+            </div>
+            <div class="progress"><span></span></div>
+            <p class="window-status">Converted 3 files · 0.8s · stayed on this device</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Stats ===== -->
+  <section class="stats">
+    <div class="container stats-grid">
+      <div><strong>3,000+</strong><span>conversion paths</span></div>
+      <div><strong>5</strong><span>media categories</span></div>
+      <div><strong>0</strong><span>files uploaded</span></div>
+      <div><strong>1</strong><span>app for all of it</span></div>
+    </div>
+  </section>
+
+  <!-- ===== Tools / Categories ===== -->
+  <section class="section" id="tools">
+    <div class="container">
+      <div class="section-head">
+        <h2>One app, five toolkits</h2>
+        <p>Every converter you reach for, bundled together and running locally.</p>
+      </div>
+      <div class="card-grid">
+        <article class="tool-card">
+          <div class="tool-icon">🖼️</div>
+          <h3>Image Converter</h3>
+          <p>HEIC, RAW, WebP, PNG, JPG, ICO, PSD, TIFF and more. Resize, compress and tune quality in the same pass.</p>
+          <span class="tool-tag">HEIC → JPG · RAW → JPG · WebP → PNG</span>
+        </article>
+        <article class="tool-card">
+          <div class="tool-icon">📄</div>
+          <h3>Document Converter</h3>
+          <p>PDF, DOCX, XLSX, PPTX, TXT, ODT, EPUB and Markdown. Merge, split and export with layout intact.</p>
+          <span class="tool-tag">DOCX → PDF · PDF → DOCX · EPUB → PDF</span>
+        </article>
+        <article class="tool-card">
+          <div class="tool-icon">🎬</div>
+          <h3>Video Converter</h3>
+          <p>MP4, MOV, MKV, AVI, WebM, GIF. Trim, transcode and compress to a fraction of the size — no quality cliff.</p>
+          <span class="tool-tag">MOV → MP4 · MKV → MP4 · MP4 → GIF</span>
+        </article>
+        <article class="tool-card">
+          <div class="tool-icon">🎵</div>
+          <h3>Audio Converter</h3>
+          <p>MP3, WAV, FLAC, AAC, M4A, OGG. Adjust bitrate and sample rate, or pull audio straight out of video.</p>
+          <span class="tool-tag">WAV → MP3 · FLAC → MP3 · M4A → WAV</span>
+        </article>
+        <article class="tool-card">
+          <div class="tool-icon">✉️</div>
+          <h3>Email Converter</h3>
+          <p>EML, MSG, MBOX and PST to readable PDF or HTML archives — attachments preserved and searchable.</p>
+          <span class="tool-tag">MSG → PDF · EML → PDF · MBOX → HTML</span>
+        </article>
+        <article class="tool-card">
+          <div class="tool-icon">📦</div>
+          <h3>Batch Engine</h3>
+          <p>Drop a whole folder. FileMorph queues hundreds of files and converts them in parallel using every core you have.</p>
+          <span class="tool-tag">Drag · Drop · Done</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Live Demo (the original "touch") ===== -->
+  <section class="section section-alt" id="try">
+    <div class="container">
+      <div class="section-head">
+        <h2>Try a converter right here</h2>
+        <p>This image converter runs entirely in your browser — a tiny taste of how the desktop app works. Your image is never uploaded.</p>
+      </div>
+
+      <div class="demo">
+        <div class="demo-drop" id="dropZone">
+          <input type="file" id="fileInput" accept="image/*" hidden />
+          <div class="demo-drop-inner">
+            <div class="demo-drop-icon">⬆️</div>
+            <p><strong>Drop an image here</strong> or <button type="button" class="link-btn" id="browseBtn">browse</button></p>
+            <small>PNG · JPG · WebP — converted locally with the Canvas API</small>
+          </div>
+        </div>
+
+        <div class="demo-controls">
+          <label>
+            Convert to
+            <select id="formatSelect">
+              <option value="image/png">PNG</option>
+              <option value="image/jpeg">JPG</option>
+              <option value="image/webp">WebP</option>
+            </select>
+          </label>
+          <label id="qualityWrap">
+            Quality <span id="qualityVal">90%</span>
+            <input type="range" id="qualityRange" min="10" max="100" value="90" />
+          </label>
+          <button class="btn btn-primary" id="convertBtn" disabled>Convert &amp; download</button>
+        </div>
+
+        <div class="demo-preview" id="previewWrap" hidden>
+          <div class="preview-col">
+            <span class="preview-label">Original</span>
+            <img id="previewImg" alt="Selected image preview" />
+            <small id="origMeta"></small>
+          </div>
+          <div class="preview-col">
+            <span class="preview-label">Result</span>
+            <div id="resultBox" class="result-box">Convert to see the output here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <h2>Why people switch to FileMorph</h2>
+        <p>Built around a simple idea: conversion shouldn't cost you your privacy.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature">
+          <h3>🔒 Truly offline</h3>
+          <p>After a one-time license check, FileMorph never touches the network again. No accounts, no cloud, no leaks.</p>
+        </div>
+        <div class="feature">
+          <h3>🚫 Zero tracking</h3>
+          <p>No analytics, no telemetry, no hidden pings. We literally can't see what you convert.</p>
+        </div>
+        <div class="feature">
+          <h3>⚡ Built for batches</h3>
+          <p>Hundreds of files at once, converted in parallel. Stop dragging files one at a time into a website.</p>
+        </div>
+        <div class="feature">
+          <h3>🎚️ Real control</h3>
+          <p>Set quality, resolution, bitrate and compression per job — or save a preset and reuse it forever.</p>
+        </div>
+        <div class="feature">
+          <h3>💻 Everywhere you work</h3>
+          <p>Native builds for macOS, Windows and Linux. One license covers all your machines.</p>
+        </div>
+        <div class="feature">
+          <h3>♾️ No file-size caps</h3>
+          <p>Convert a 12 GB video or a 4-page memo — local processing means there's no upload limit to fight.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Formats marquee ===== -->
+  <section class="section section-alt" id="formats">
+    <div class="container">
+      <div class="section-head">
+        <h2>A few of the 3,000+ paths</h2>
+        <p>If it's a common format, FileMorph almost certainly speaks it.</p>
+      </div>
+      <div class="chips">
+        <span>HEIC → JPG</span><span>RAW → JPG</span><span>WebP → PNG</span><span>PNG → ICO</span>
+        <span>PSD → PNG</span><span>DOCX → PDF</span><span>PDF → DOCX</span><span>XLSX → CSV</span>
+        <span>EPUB → PDF</span><span>MOV → MP4</span><span>MKV → MP4</span><span>MP4 → GIF</span>
+        <span>WAV → MP3</span><span>FLAC → MP3</span><span>M4A → WAV</span><span>MSG → PDF</span>
+        <span>EML → PDF</span><span>MBOX → HTML</span><span>TIFF → JPG</span><span>SVG → PNG</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Pricing ===== -->
+  <section class="section" id="pricing">
+    <div class="container">
+      <div class="section-head">
+        <h2>One price. Yours to keep.</h2>
+        <p>Buy once, own it. No subscriptions, no surprise renewals.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Free Trial</h3>
+          <p class="price">$0</p>
+          <ul>
+            <li>✓ All 5 toolkits</li>
+            <li>✓ Up to 10 conversions/day</li>
+            <li>✓ Fully offline</li>
+            <li>✗ Batch engine</li>
+          </ul>
+          <a href="#" class="btn btn-ghost btn-block">Start trial</a>
+        </div>
+        <div class="price-card featured">
+          <span class="badge">Most popular</span>
+          <h3>Lifetime</h3>
+          <p class="price">$39<span>once</span></p>
+          <ul>
+            <li>✓ Everything in trial</li>
+            <li>✓ Unlimited conversions</li>
+            <li>✓ Full batch engine</li>
+            <li>✓ 3 devices · free updates</li>
+          </ul>
+          <a href="#" class="btn btn-primary btn-block">Get FileMorph</a>
+        </div>
+        <div class="price-card">
+          <h3>Team</h3>
+          <p class="price">$129<span>once</span></p>
+          <ul>
+            <li>✓ Everything in Lifetime</li>
+            <li>✓ 10 seats</li>
+            <li>✓ Shared presets</li>
+            <li>✓ Priority support</li>
+          </ul>
+          <a href="#" class="btn btn-ghost btn-block">Buy for team</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="section section-alt" id="faq">
+    <div class="container">
+      <div class="section-head">
+        <h2>Frequently asked</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>Do my files ever get uploaded?</summary>
+          <p>No. Every conversion happens on your own device. The only network call FileMorph ever makes is a one-time license validation during setup.</p>
+        </details>
+        <details>
+          <summary>Which platforms are supported?</summary>
+          <p>macOS (Apple Silicon &amp; Intel), Windows 10/11, and major Linux distributions. One Lifetime license covers up to 3 of your machines.</p>
+        </details>
+        <details>
+          <summary>Is the in-page demo the real app?</summary>
+          <p>The demo is a small browser-based image converter to show the idea. The desktop app is far more capable — video, audio, documents, email and true batch processing.</p>
+        </details>
+        <details>
+          <summary>Can I convert hundreds of files at once?</summary>
+          <p>Yes. Drop a whole folder and the batch engine processes everything in parallel across all your CPU cores.</p>
+        </details>
+        <details>
+          <summary>Is there a subscription?</summary>
+          <p>Never. FileMorph is a one-time purchase with free updates included.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta">
+    <div class="container">
+      <h2>Stop uploading your files to strangers.</h2>
+      <p>Convert anything, keep everything private, and own your tools for life.</p>
+      <a href="#pricing" class="btn btn-primary btn-lg">Download FileMorph — $39</a>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a href="#top" class="brand"><span class="brand-mark">◈</span><span class="brand-name">FileMorph</span></a>
+        <p class="footer-tag">Convert anything, locally.</p>
+      </div>
+      <div>
+        <h4>Tools</h4>
+        <a href="#tools">Image</a><a href="#tools">Document</a><a href="#tools">Video</a>
+        <a href="#tools">Audio</a><a href="#tools">Email</a>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Privacy</a><a href="#">Terms</a><a href="#">License</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© 2026 FileMorph. An independent project — not affiliated with any other converter.</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
