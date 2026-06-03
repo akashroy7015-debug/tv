@@ -5,8 +5,8 @@ create table if not exists public.subscriptions (
   user_id uuid primary key references auth.users(id) on delete cascade,
   plan text not null default 'Pro',
   status text not null default 'inactive',          -- 'active' | 'canceled' | 'inactive'
-  stripe_customer_id text,
-  stripe_subscription_id text,
+  provider text not null default 'lemonsqueezy',
+  subscription_id text,
   updated_at timestamptz not null default now()
 );
 
@@ -19,4 +19,4 @@ create policy "read own subscription"
   using (auth.uid() = user_id);
 
 -- No insert/update/delete policies for normal users:
--- the Stripe webhook writes using the service-role key, which bypasses RLS.
+-- the Lemon Squeezy webhook writes using the service-role key, which bypasses RLS.

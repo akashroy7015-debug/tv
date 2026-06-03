@@ -1,61 +1,66 @@
-# FileMorph — Going Live on Cloudflare Pages (free)
+# FileMorph — Going Live on Cloudflare Pages + Lemon Squeezy (India-friendly)
 
-Hosting + payment backend both run free on **Cloudflare Pages** (Pages Functions).
-Domain stays at GoDaddy; you'll point it at Cloudflare. Accounts you create: **Cloudflare**,
-**Stripe**, **Supabase**. Use Stripe **Test mode** first. Budget ~40 min.
+Free hosting + payment backend on **Cloudflare Pages**. Payments via **Lemon Squeezy**
+(Merchant of Record — handles global tax, pays out to your Indian bank, no registered
+business needed). Accounts to create: **Lemon Squeezy**, **Supabase**, **Cloudflare**.
+Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
 
 > The site already works in **demo mode** with no backend. These steps make it real.
 
 ---
 
-## 1. Stripe (payments)
-1. https://dashboard.stripe.com — create account, stay in **Test mode** (toggle, top-right).
-2. **Products → Add product**: "FileMorph Pro", **$9/month recurring** → copy its **Price ID** (`price_...`).
-3. Same for "FileMorph Team", **$29/month** → copy **Price ID**.
-4. **Developers → API keys** → copy the **Secret key** (`sk_test_...`).
+## 1. Lemon Squeezy (payments)
+1. Sign up at https://app.lemonsqueezy.com and create your **Store**.
+2. Turn on **Test mode** (toggle in the dashboard) while setting up.
+3. **Products → New Product**: "FileMorph Pro", a **Subscription**, **$9 / month** → Publish.
+   - Open the product → its **Variant** → copy the **Variant ID** (a number).
+4. New Product: "FileMorph Team", Subscription, **$29 / month** → copy its **Variant ID**.
+5. **Settings → API** → create an **API key** → copy it (`eyJ0...`, shown once).
+6. Note your **Store ID** (Settings → Stores, or the number in the dashboard URL).
 
 ## 2. Supabase (accounts)
-1. https://supabase.com — new free project.
+1. https://supabase.com → new free project.
 2. **SQL Editor → New query** → paste `supabase-schema.sql` → **Run**.
-3. **Authentication → Providers → Email** → turn **OFF** "Confirm email" (so login is instant).
+3. **Authentication → Providers → Email** → turn **OFF** "Confirm email" (instant login).
 4. **Project Settings → API** → copy **Project URL**, **anon public** key, **service_role** key.
 
 ## 3. Point your domain at Cloudflare
-1. https://dash.cloudflare.com — **Add a site** → enter `filemorph.shop` → **Free** plan.
-2. Cloudflare scans your DNS and shows **two nameservers** (e.g. `xxx.ns.cloudflare.com`).
-3. At **GoDaddy → filemorph.shop → Nameservers → Change → "I'll use my own"** → paste the two
-   Cloudflare nameservers → Save. (Propagation: minutes to a few hours.)
-   - This replaces the old GitHub Pages A records automatically — no need to delete them.
+1. https://dash.cloudflare.com → **Add a site** → `filemorph.shop` → **Free** plan.
+2. Cloudflare shows **two nameservers**.
+3. **GoDaddy → filemorph.shop → Nameservers → Change → "Enter my own"** → paste the two
+   Cloudflare nameservers → Save. (Propagates in minutes–hours; replaces old records.)
 
 ## 4. Deploy to Cloudflare Pages
-1. Cloudflare dashboard → **Workers & Pages → Create → Pages → Connect to Git**.
-2. Pick the repo **akashroy7015-debug/tv**. Production branch: `claude/focused-planck-9YXe4`.
+1. **Workers & Pages → Create → Pages → Connect to Git** → pick `akashroy7015-debug/tv`.
+2. Production branch: `claude/focused-planck-9YXe4`.
 3. Build settings:
    - **Framework preset:** None
-   - **Build command:** *(leave empty)*
+   - **Build command:** *(empty)*
    - **Build output directory:** `website`
    - **Root directory (Advanced):** `website`
-4. **Environment variables** (Settings → after first deploy, or in the wizard) — add:
+4. **Environment variables** — add:
    | Name | Value |
    |------|-------|
-   | `STRIPE_SECRET_KEY` | `sk_test_...` |
-   | `STRIPE_PRICE_PRO` | `price_...` (Pro) |
-   | `STRIPE_PRICE_TEAM` | `price_...` (Team) |
-   | `STRIPE_WEBHOOK_SECRET` | *(fill after step 6)* |
+   | `LEMONSQUEEZY_API_KEY` | your API key |
+   | `LEMONSQUEEZY_STORE_ID` | your store ID (number) |
+   | `LEMONSQUEEZY_VARIANT_PRO` | Pro variant ID |
+   | `LEMONSQUEEZY_VARIANT_TEAM` | Team variant ID |
+   | `LEMONSQUEEZY_WEBHOOK_SECRET` | *(you'll choose this in step 6)* |
    | `SUPABASE_URL` | `https://xxxx.supabase.co` |
    | `SUPABASE_SERVICE_ROLE_KEY` | service_role key |
-5. **Save and Deploy.** You get a URL like `filemorph.pages.dev`.
-   - `wrangler.toml` already sets the `nodejs_compat` flag the Stripe SDK needs.
+5. **Save and Deploy** → you get `filemorph.pages.dev`. (`wrangler.toml` already sets `nodejs_compat`.)
 
 ## 5. Add your custom domain
-Pages project → **Custom domains → Set up a domain** → `filemorph.shop` (and `www.filemorph.shop`).
-Because Cloudflare now manages your DNS, it adds the records automatically. SSL is automatic.
+Pages project → **Custom domains** → add `filemorph.shop` and `www.filemorph.shop`.
+Cloudflare manages the DNS now, so records + SSL are automatic.
 
-## 6. Stripe webhook
-1. Stripe **Developers → Webhooks → Add endpoint**.
-2. URL: `https://filemorph.shop/api/stripe-webhook`
-3. Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
-4. Copy the **Signing secret** (`whsec_...`) → add as `STRIPE_WEBHOOK_SECRET` in Pages env vars → **Retry deployment**.
+## 6. Lemon Squeezy webhook
+1. Lemon Squeezy **Settings → Webhooks → +** .
+2. **Callback URL:** `https://filemorph.shop/api/lemon-webhook`
+3. **Signing secret:** make up a strong random string — use the SAME value for
+   `LEMONSQUEEZY_WEBHOOK_SECRET` in Cloudflare (step 4) → redeploy.
+4. **Events:** check `subscription_created`, `subscription_updated`, `subscription_cancelled`,
+   `subscription_expired` (and `order_created` if you like). Save.
 
 ## 7. Flip the frontend to live
 Edit `website/config.js`:
@@ -68,23 +73,25 @@ window.FM_CONFIG = {
   plans: { Pro: 9, Team: 29 }
 };
 ```
-Commit & push — Cloudflare Pages auto-redeploys from the repo.
+Commit & push — Cloudflare Pages auto-redeploys.
 
-## 8. Test (Stripe Test mode)
+## 8. Test (Lemon Squeezy Test mode)
 - Open `https://filemorph.shop`, sign up, use 5 free conversions, then **Choose Pro**.
-- Pay with test card **4242 4242 4242 4242**, any future expiry, any CVC.
-- You should land back with **"Subscription active"** and unlimited conversions.
-- Works? Switch Stripe to **Live mode**, redo steps 1 & 6 with live keys, update env vars.
+- Pay with the LS **test card 4242 4242 4242 4242**, any future expiry, any CVC.
+- You return to the site and within a few seconds see **"Subscription active"** + unlimited.
+- Works? In Lemon Squeezy turn **Test mode OFF** (go live), recreate the API key/webhook for
+  live if needed, update Cloudflare env vars.
 
 ---
 
 ## Still TODO (server-side media conversion)
 Video / audio / document / email currently **queue** in the UI but have no worker yet.
-Add a Pages Function that calls a conversion API (e.g. CloudConvert) or a separate
-container worker (Render/Railway) running `ffmpeg` + `libreoffice`. Ask me and I'll build it.
+Add a Pages Function calling a conversion API (e.g. CloudConvert) or a container worker
+(Render/Railway) with `ffmpeg` + `libreoffice`. Ask me and I'll build it.
 
 ## Files
-- `functions/api/*.js` — Cloudflare Pages Functions (Stripe + Supabase)
+- `functions/api/create-checkout-session.js` — creates Lemon Squeezy checkout
+- `functions/api/lemon-webhook.js` — verifies webhook (HMAC), updates Supabase
 - `wrangler.toml` — Pages build/compat config
 - `supabase-schema.sql` — DB table + security
 - `config.js` — demo ⇄ live switch

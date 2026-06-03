@@ -1,8 +1,6 @@
-// Cloudflare Pages Function — creates a Stripe Checkout Session (subscription).
+// Cloudflare Pages Function — creates a Lemon Squeezy checkout.
 // Route: POST /api/create-checkout-session
-// Env (Pages → Settings → Environment variables): STRIPE_SECRET_KEY, STRIPE_PRICE_PRO, STRIPE_PRICE_TEAM
-import Stripe from "stripe";
-
+// Env: LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_PRO, LEMONSQUEEZY_VARIANT_TEAM
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
 }
@@ -10,28 +8,46 @@ function json(obj, status = 200) {
 export async function onRequestPost(context) {
   const { request, env } = context;
   try {
-    const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      httpClient: Stripe.createFetchHttpClient(),
-      apiVersion: "2024-06-20"
-    });
-    const PRICES = { Pro: env.STRIPE_PRICE_PRO, Team: env.STRIPE_PRICE_TEAM };
-
     const { plan, userId, email } = await request.json();
-    const price = PRICES[plan];
-    if (!price) return json({ error: "Unknown or unconfigured plan: " + plan }, 400);
+    const VARIANTS = { Pro: env.LEMONSQUEEZY_VARIANT_PRO, Team: env.LEMONSQUEEZY_VARIANT_TEAM };
+    const variantId = VARIANTS[plan];
+    if (!variantId) return json({ error: "Unknown or unconfigured plan: " + plan }, 400);
 
     const origin = new URL(request.url).origin;
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price, quantity: 1 }],
-      customer_email: email || undefined,
-      client_reference_id: userId || undefined,
-      metadata: { plan, userId: userId || "" },
-      allow_promotion_codes: true,
-      success_url: origin + "/?checkout=success",
-      cancel_url: origin + "/?checkout=cancel"
+    const payload = {
+      data: {
+        type: "checkouts",
+        attributes: {
+          checkout_data: {
+            email: email || undefined,
+            custom: { user_id: String(userId || ""), plan: String(plan) }
+          },
+          product_options: { redirect_url: origin + "/?checkout=success" }
+        },
+        relationships: {
+          store: { data: { type: "stores", id: String(env.LEMONSQUEEZY_STORE_ID) } },
+          variant: { data: { type: "variants", id: String(variantId) } }
+        }
+      }
+    };
+
+    const res = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.api+json",
+        "Content-Type": "application/vnd.api+json",
+        Authorization: "Bearer " + env.LEMONSQUEEZY_API_KEY
+      },
+      body: JSON.stringify(payload)
     });
-    return json({ url: session.url });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = (data.errors && data.errors[0] && data.errors[0].detail) || "Lemon Squeezy error";
+      return json({ error: msg }, 500);
+    }
+    const url = data.data && data.data.attributes && data.data.attributes.url;
+    if (!url) return json({ error: "No checkout URL returned" }, 500);
+    return json({ url });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
