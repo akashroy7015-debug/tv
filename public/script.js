@@ -109,12 +109,12 @@
     }
     var left = quotaLeft();
     var limit = planLimit();
-    var label = plan === "free" ? "Free" : "<span class='plan-badge'>" + plan + "</span>";
-    usageText.innerHTML = label + " · <strong>" + left + " / " + limit + "</strong> conversions left this month";
     if (plan === "free") {
+      usageText.innerHTML = "Free · <strong>" + left + " / " + limit + "</strong> conversions left this month";
       upgradeLink.textContent = "Upgrade for more →";
       upgradeLink.hidden = left > 2;
     } else {
+      usageText.innerHTML = "⭐ <span class='plan-badge'>" + plan + "</span> · <strong>" + left + "</strong> of " + limit + " conversions left this month";
       upgradeLink.textContent = "Go unlimited with Team →";
       upgradeLink.hidden = left > 25;
     }
@@ -124,10 +124,15 @@
   /* ---------- pricing cards: mark the user's current plan ---------- */
   function renderPlans() {
     var plan = currentPlan();
+    var paid = plan !== "free";
     document.querySelectorAll("[data-plan]").forEach(function (btn) {
       var p = btn.getAttribute("data-plan");
       var card = btn.closest(".price-card");
-      if (card) card.classList.toggle("current", p === plan);
+      if (card) {
+        card.classList.toggle("current", p === plan);
+        // Paid users shouldn't see the Free tier anymore — they bought a plan.
+        if (p === "free") card.style.display = paid ? "none" : "";
+      }
       if (p === plan) {
         btn.textContent = "✓ Your current plan";
         btn.disabled = true;
@@ -135,8 +140,7 @@
       } else {
         btn.disabled = false;
         btn.classList.remove("is-current");
-        btn.textContent = p === "free" ? "Downgrade to Free" : "Choose " + p;
-        if (p === "free") btn.textContent = "Free plan";
+        btn.textContent = p === "free" ? "Free plan" : "Choose " + p;
       }
     });
   }
