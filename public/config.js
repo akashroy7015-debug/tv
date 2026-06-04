@@ -3,9 +3,9 @@
 // To go LIVE with real accounts + payments: deploy to Vercel + Supabase (see DEPLOY.md),
 // then set mode:"live" and fill the two Supabase values below.
 window.FM_CONFIG = {
-  mode: "demo",                       // "demo" or "live"
-  supabaseUrl: "",                    // e.g. https://xxxx.supabase.co
-  supabaseAnonKey: "",               // Supabase anon/public key (safe in frontend)
+  mode: "live",                       // "demo" or "live"
+  supabaseUrl: "https://cdqiqvlskzelnhwfmiux.supabase.co",
+  supabaseAnonKey: "sb_publishable_l7fIG3GIKW4P3sCkOg5pzQ_kra8f50b", // publishable key (safe in browser)
   checkoutEndpoint: "/api/create-checkout-session",
   plans: { Pro: 9, Team: 29 }
 };
