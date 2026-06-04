@@ -14,7 +14,6 @@ binding = "ASSETS"
 # add those in the dashboard as encrypted "Secret" type so they persist.
 [vars]
 SUPABASE_URL = "https://cdqiqvlskzelnhwfmiux.supabase.co"
-# Fill these with your Lemon Squeezy IDs (they are not secret):
-# LEMONSQUEEZY_STORE_ID = "123456"
-# LEMONSQUEEZY_VARIANT_PRO = "111111"
-# LEMONSQUEEZY_VARIANT_TEAM = "222222"
+LEMONSQUEEZY_STORE_ID = "396780"
+LEMONSQUEEZY_VARIANT_PRO = "1745359"
+LEMONSQUEEZY_VARIANT_TEAM = "1745334"
