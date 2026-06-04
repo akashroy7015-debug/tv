@@ -101,3 +101,11 @@ Add a Pages Function calling a conversion API (e.g. CloudConvert) or a container
 - `wrangler.toml` — Pages build/compat config
 - `supabase-schema.sql` — DB table + security
 - `config.js` — demo ⇄ live switch
+
+## Server-side conversion (video/audio/document/email) — CloudConvert
+Non-image conversions run through **CloudConvert** (free tier ~25/day).
+1. Sign up at https://cloudconvert.com → **Dashboard → API Keys → Create** (scopes: `task.read`, `task.write`).
+2. Copy the API key.
+3. **Cloudflare → Worker `tv` → Settings → Variables** → add `CLOUDCONVERT_API_KEY` = that key → redeploy.
+After that, the Video/Audio/Document/Email tabs upload the file, convert via CloudConvert,
+and return a download link. (Until the key is set, those tabs show a "not configured" message.)

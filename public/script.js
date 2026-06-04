@@ -255,16 +255,37 @@
   });
   function doConvert() {
     if (CATS[currentCat].real && currentImage) convertImage();
-    else showServerResult();
+    else serverConvert();
   }
-  function showServerResult() {
-    var ext = formatSelect.value;
+  function serverConvert() {
+    var fmt = formatSelect.value;
     resultBox.innerHTML = "";
-    var icon = document.createElement("div"); icon.style.fontSize = "2.4rem"; icon.textContent = "🗂️";
-    var msg = document.createElement("p"); msg.style.margin = "6px 0"; msg.style.color = "var(--text)";
-    msg.innerHTML = "Queued: <strong>" + (currentFile.name || "file") + " → ." + ext + "</strong>";
-    var sub = document.createElement("small"); sub.textContent = "This format is processed on FileMorph's servers. Connect the conversion backend to enable live download.";
-    resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
+    var status = document.createElement("p");
+    status.style.color = "var(--text)"; status.style.margin = "0";
+    status.innerHTML = "⏳ Converting <strong>" + (currentFile.name || "file") + "</strong> → ." + fmt + " …<br><small style='color:var(--muted)'>This runs on our servers and can take a moment.</small>";
+    resultBox.appendChild(status);
+
+    var fd = new FormData();
+    fd.append("file", currentFile, currentFile.name || "upload");
+    fd.append("format", fmt);
+
+    fetch("/api/convert", { method: "POST", body: fd })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        var d = res.d || {};
+        if (res.ok && d.url) {
+          resultBox.innerHTML = "";
+          var icon = document.createElement("div"); icon.style.fontSize = "2.4rem"; icon.textContent = "✅";
+          var meta = document.createElement("small"); meta.textContent = (d.filename || ("converted." + fmt));
+          var dl = document.createElement("a");
+          dl.href = d.url; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + fmt;
+          dl.setAttribute("download", d.filename || ("converted." + fmt)); dl.target = "_blank"; dl.rel = "noopener";
+          resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
+        } else {
+          resultBox.textContent = (d.error || "Conversion failed. Please try again.");
+        }
+      })
+      .catch(function (e) { resultBox.textContent = "Conversion error: " + e.message; });
   }
 
   /* ---------- real image converter ---------- */
