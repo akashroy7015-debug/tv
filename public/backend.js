@@ -22,7 +22,8 @@
       logout: function () { try { localStorage.removeItem(LS); } catch (e) {} return Promise.resolve(); },
       // demo "purchase" just flips the local plan (the fake card modal calls this)
       purchase: function (plan) { var u = get() || {}; u.plan = plan; set(u); return Promise.resolve({ done: true }); },
-      refresh: function () { return Promise.resolve(); }
+      refresh: function () { return Promise.resolve(); },
+      verify: function () { return Promise.resolve(this.isPaid()); }
     };
   }
 
@@ -79,6 +80,20 @@
         var data = await res.json();
         if (data && data.url) { window.location.href = data.url; return { redirect: true }; }
         throw new Error((data && data.error) || "Could not start checkout");
+      },
+      // Ask Lemon Squeezy directly (reliable even if the webhook didn't fire).
+      verify: async function () {
+        if (!currentUser) return false;
+        try {
+          var res = await fetch("/api/verify-subscription", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: currentUser.id, email: currentUser.email })
+          });
+          var d = await res.json();
+          if (d && d.active) { sub = { plan: d.plan, status: "active" }; return true; }
+        } catch (e) {}
+        await loadSub();
+        return paid();
       },
       refresh: loadSub
     };

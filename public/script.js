@@ -399,7 +399,7 @@
       $("convert").scrollIntoView({ behavior: "smooth" });
       var tries = 0;
       (function poll() {
-        B.refresh().then(function () {
+        B.verify().then(function () {
           renderAccount(); renderUsage();
           if (isPaid()) {
             var plan = currentPlan();
@@ -419,5 +419,9 @@
   /* ---------- init ---------- */
   B.ready.then(function () {
     renderAccount(); renderUsage(); applyCategory("image"); handleReturn();
+    // Self-heal: logged in but showing Free? Ask Lemon Squeezy directly.
+    if (B.verify && getUser() && !isPaid()) {
+      B.verify().then(function (active) { if (active) { renderAccount(); renderUsage(); showToast("Welcome back — your " + currentPlan() + " plan is active."); } });
+    }
   });
 })();
