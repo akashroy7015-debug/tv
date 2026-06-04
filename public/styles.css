@@ -351,3 +351,13 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
 .footer-links { text-align: center; }
 .footer-links a { color: var(--muted); margin: 0 8px; }
 .footer-links a:hover { color: var(--text); }
+
+/* ===== Paid state + current plan ===== */
+.plan-badge {
+  display: inline-block; background: var(--accent-grad); color: #fff; font-weight: 700;
+  font-size: 0.72rem; letter-spacing: .03em; padding: 2px 9px; border-radius: 999px; vertical-align: middle;
+}
+.usage-bar.paid { border-color: transparent; box-shadow: var(--glow); background: var(--surface); }
+.price-card.current { border-color: var(--accent-2); box-shadow: var(--glow); }
+.price-card .is-current { background: var(--surface-2); color: var(--accent-2); cursor: default; box-shadow: none; opacity: 1; }
+.price-card .is-current:hover { transform: none; }
