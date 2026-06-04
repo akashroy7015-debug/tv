@@ -4,6 +4,7 @@ import { onRequestPost as lemonWebhook } from "./functions/api/lemon-webhook.js"
 import { onRequestPost as verifySub } from "./functions/api/verify-subscription.js";
 import { onRequestPost as paypalVerify } from "./functions/api/paypal-verify.js";
 import { onRequestGet as paypalSetup } from "./functions/api/paypal-setup.js";
+import { onRequestPost as paypalWebhook } from "./functions/api/paypal-webhook.js";
 
 export default {
   async fetch(request, env) {
@@ -19,6 +20,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/paypal-verify") {
       return paypalVerify({ request, env });
+    }
+    if (request.method === "POST" && url.pathname === "/api/paypal-webhook") {
+      return paypalWebhook({ request, env });
     }
     if (request.method === "GET" && url.pathname === "/api/paypal-setup") {
       return paypalSetup({ request, env });

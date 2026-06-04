@@ -58,3 +58,11 @@ Commit & push → Cloudflare redeploys. The checkout now shows **Pay with card**
 - Cancellations: this MVP marks users active on approval. To auto-downgrade when someone
   cancels in PayPal, add a PayPal webhook (`BILLING.SUBSCRIPTION.CANCELLED/EXPIRED`) later.
 - Security: the setup endpoint is protected by `PAYPAL_SETUP_KEY`. Remove it after setup.
+
+## 7. Auto-handle cancellations (PayPal webhook)
+1. PayPal Developer → your app → **Add Webhook**:
+   - **URL:** `https://filemorph.shop/api/paypal-webhook`
+   - **Events:** `BILLING.SUBSCRIPTION.ACTIVATED`, `BILLING.SUBSCRIPTION.CANCELLED`,
+     `BILLING.SUBSCRIPTION.EXPIRED`, `BILLING.SUBSCRIPTION.SUSPENDED`
+2. Copy the **Webhook ID** → add as `PAYPAL_WEBHOOK_ID` in Cloudflare (plain text) → redeploy.
+Now when a user cancels in PayPal, their account is automatically downgraded.
