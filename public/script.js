@@ -116,7 +116,12 @@
       openModal(planModal);
     } else {
       showToast("Redirecting to secure checkout…");
-      B.purchase(plan).catch(function (err) { showToast(err.message || "Checkout failed"); });
+      B.purchase(plan).catch(function (err) {
+        showToast(err.message || "Checkout failed");
+        alert("Checkout error:\n\n" + (err.message || "unknown error") +
+          "\n\nThis usually means a Lemon Squeezy setting in Cloudflare is missing/incorrect " +
+          "(LEMONSQUEEZY_API_KEY, STORE_ID, VARIANT_PRO/TEAM).");
+      });
     }
   }
 
