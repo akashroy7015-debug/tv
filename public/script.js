@@ -226,7 +226,7 @@
     if (_ppLoading) return _ppLoading;
     _ppLoading = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&vary=subscription&intent=subscription&components=buttons";
+      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&vault=true&intent=subscription&components=buttons";
       s.onload = resolve;
       s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
       document.head.appendChild(s);
@@ -265,8 +265,12 @@
           }).catch(function (e) { box.innerHTML = "<small style='color:#ff6b6b'>" + e.message + "</small>"; });
         },
         onError: function () { showToast("PayPal error — try the card option."); }
-      }).render("#paypalButtons");
-    }).catch(function () { if (divider) divider.style.display = "none"; });
+      }).render("#paypalButtons").catch(function (e) {
+        box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load here. Please use the card option.</small>";
+      });
+    }).catch(function () {
+      box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
+    });
   }
 
   function friendlyAuthError(msg) {
