@@ -7,3 +7,14 @@ compatibility_flags = ["nodejs_compat"]
 [assets]
 directory = "./public"
 binding = "ASSETS"
+
+# Non-secret runtime config (these persist across every deploy).
+# SECRET keys (LEMONSQUEEZY_API_KEY, SUPABASE_SERVICE_ROLE_KEY,
+# LEMONSQUEEZY_WEBHOOK_SECRET, CLOUDCONVERT_API_KEY) are NOT here —
+# add those in the dashboard as encrypted "Secret" type so they persist.
+[vars]
+SUPABASE_URL = "https://cdqiqvlskzelnhwfmiux.supabase.co"
+# Fill these with your Lemon Squeezy IDs (they are not secret):
+# LEMONSQUEEZY_STORE_ID = "123456"
+# LEMONSQUEEZY_VARIANT_PRO = "111111"
+# LEMONSQUEEZY_VARIANT_TEAM = "222222"
