@@ -34,16 +34,20 @@
 
   /* ---------- category config ---------- */
   var CATS = {
-    image: { accept: "image/*", real: true, hint: "PNG · JPG · WebP · PDF — converted locally, no upload",
+    image: { accept: "image/*", engine: "image", hint: "PNG · JPG · WebP · PDF — converted locally, no upload",
       formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"]], note: "" },
-    document: { accept: ".pdf,.docx,.doc,.txt,.odt,.epub,.rtf", real: false, hint: "PDF · DOCX · TXT · EPUB — processed on FileMorph's servers",
-      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["txt", "TXT"], ["epub", "EPUB"]], note: "Document conversions run on FileMorph's servers. Included with any plan." },
-    video: { accept: "video/*", real: false, hint: "MP4 · WebM · MOV · MKV — processed on FileMorph's servers",
-      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"]], note: "Video conversions run on FileMorph's servers. Included with any plan." },
-    audio: { accept: "audio/*", real: false, hint: "MP3 · WAV · AAC · FLAC — processed on FileMorph's servers",
-      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["flac", "FLAC"]], note: "Audio conversions run on FileMorph's servers. Included with any plan." },
-    email: { accept: ".eml,.msg,.mbox,.pst", real: false, hint: "EML · MSG · MBOX → PDF / HTML — processed on FileMorph's servers",
-      formats: [["pdf", "PDF"], ["html", "HTML"]], note: "Email conversions run on FileMorph's servers. Included with any plan." }
+    audio: { accept: "audio/*", engine: "ffmpeg", hint: "MP3 · WAV · AAC · M4A · OGG — converted in your browser",
+      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["m4a", "M4A"], ["ogg", "OGG"]],
+      note: "Converted privately in your browser — nothing is uploaded." },
+    video: { accept: "video/*", engine: "ffmpeg", hint: "MP4 · WebM · MOV · GIF — converted in your browser",
+      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"]],
+      note: "Converted privately in your browser. Large videos may take a while." },
+    document: { accept: ".pdf,.docx,.doc,.txt,.odt,.epub,.rtf", engine: "soon", hint: "Document conversion is coming soon",
+      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["txt", "TXT"]],
+      note: "Document conversion is coming soon. Image, PDF, audio & video work today." },
+    email: { accept: ".eml,.msg,.mbox,.pst", engine: "soon", hint: "Email conversion is coming soon",
+      formats: [["pdf", "PDF"], ["html", "HTML"]],
+      note: "Email conversion is coming soon. Image, PDF, audio & video work today." }
   };
   var currentCat = "image";
 
@@ -259,7 +263,7 @@
     formatSelect.innerHTML = "";
     c.formats.forEach(function (f) { var o = document.createElement("option"); o.value = f[0]; o.textContent = f[1]; formatSelect.appendChild(o); });
     catNote.hidden = !c.note; catNote.textContent = c.note ? "ℹ️ " + c.note : "";
-    qualityWrap.style.display = c.real ? "" : "none";
+    qualityWrap.style.display = c.engine === "image" ? "" : "none";
     currentFile = null; currentImage = null; convertBtn.disabled = true;
     previewWrap.hidden = true; resultBox.textContent = "Convert to see the output here.";
   }
@@ -295,6 +299,8 @@
   /* ---------- gating + convert ---------- */
   convertBtn.addEventListener("click", function () {
     if (!currentFile) return;
+    var engine = CATS[currentCat].engine;
+    if (engine === "soon") { comingSoon(); return; } // don't spend a credit on unsupported types
     if (!unlimited() && quotaLeft() <= 0) {
       var plan = currentPlan();
       if (plan === "free") {
@@ -310,38 +316,69 @@
     if (!unlimited()) { bumpUsed(); renderUsage(); }
   });
   function doConvert() {
-    if (CATS[currentCat].real && currentImage) convertImage();
-    else serverConvert();
+    var engine = CATS[currentCat].engine;
+    if (engine === "image" && currentImage) convertImage();
+    else if (engine === "ffmpeg") ffmpegConvert();
+    else comingSoon();
   }
-  function serverConvert() {
+  function comingSoon() {
+    resultBox.innerHTML = "";
+    var icon = document.createElement("div"); icon.style.fontSize = "2.2rem"; icon.textContent = "🛠️";
+    var msg = document.createElement("p"); msg.style.color = "var(--text)"; msg.style.margin = "6px 0";
+    msg.textContent = "This format is coming soon.";
+    var sub = document.createElement("small"); sub.textContent = "Image, PDF, audio and video convert right here in your browser today.";
+    resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
+  }
+
+  /* ---------- in-browser audio/video converter (ffmpeg.wasm — our own, no upload) ---------- */
+  var _ff = null, _ffLoading = null;
+  function loadFFmpeg() {
+    if (_ff) return Promise.resolve(_ff);
+    if (_ffLoading) return _ffLoading;
+    _ffLoading = (async function () {
+      var mod = await import("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
+      var util = await import("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js");
+      var ff = new mod.FFmpeg();
+      var base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
+      await ff.load({
+        coreURL: await util.toBlobURL(base + "/ffmpeg-core.js", "text/javascript"),
+        wasmURL: await util.toBlobURL(base + "/ffmpeg-core.wasm", "application/wasm")
+      });
+      _ff = { ff: ff, util: util };
+      return _ff;
+    })();
+    return _ffLoading;
+  }
+  function ffmpegConvert() {
     var fmt = formatSelect.value;
+    var inName = "in_" + (currentFile.name || "file").replace(/[^\w.\-]/g, "_");
+    var outName = "out." + fmt;
     resultBox.innerHTML = "";
     var status = document.createElement("p");
     status.style.color = "var(--text)"; status.style.margin = "0";
-    status.innerHTML = "⏳ Converting <strong>" + (currentFile.name || "file") + "</strong> → ." + fmt + " …<br><small style='color:var(--muted)'>This runs on our servers and can take a moment.</small>";
+    status.innerHTML = "⏳ Loading converter…<br><small style='color:var(--muted)'>First run downloads the engine (~30 MB), then it's instant.</small>";
     resultBox.appendChild(status);
 
-    var fd = new FormData();
-    fd.append("file", currentFile, currentFile.name || "upload");
-    fd.append("format", fmt);
-
-    fetch("/api/convert", { method: "POST", body: fd })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-      .then(function (res) {
-        var d = res.d || {};
-        if (res.ok && d.url) {
+    loadFFmpeg().then(function (x) {
+      var ff = x.ff, util = x.util;
+      try { ff.on("progress", function (p) { status.innerHTML = "⏳ Converting… " + Math.max(1, Math.min(99, Math.round((p.progress || 0) * 100))) + "%"; }); } catch (e) {}
+      return util.fetchFile(currentFile)
+        .then(function (buf) { return ff.writeFile(inName, buf); })
+        .then(function () { return ff.exec(["-i", inName, outName]); })
+        .then(function () { return ff.readFile(outName); })
+        .then(function (data) {
+          var blob = new Blob([data.buffer]);
+          var url = URL.createObjectURL(blob);
           resultBox.innerHTML = "";
           var icon = document.createElement("div"); icon.style.fontSize = "2.4rem"; icon.textContent = "✅";
-          var meta = document.createElement("small"); meta.textContent = (d.filename || ("converted." + fmt));
+          var meta = document.createElement("small"); meta.textContent = fmt.toUpperCase() + " · " + humanSize(blob.size);
           var dl = document.createElement("a");
-          dl.href = d.url; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + fmt;
-          dl.setAttribute("download", d.filename || ("converted." + fmt)); dl.target = "_blank"; dl.rel = "noopener";
+          dl.href = url; dl.download = currentName + "." + fmt; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + fmt;
           resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
-        } else {
-          resultBox.textContent = (d.error || "Conversion failed. Please try again.");
-        }
-      })
-      .catch(function (e) { resultBox.textContent = "Conversion error: " + e.message; });
+        });
+    }).catch(function (e) {
+      resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e) + ". Try a smaller file or a different format.";
+    });
   }
 
   /* ---------- real image converter ---------- */
