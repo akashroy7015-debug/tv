@@ -2,19 +2,30 @@
 (function () {
   "use strict";
 
-  var FREE_LIMIT = 5;
-  var LS_USED = "fm_free_used";
   var B = window.FMBackend; // demo or live backend
+
+  // Monthly conversion quota per plan. Team = unlimited.
+  var PLAN_LIMITS = { free: 5, Pro: 300, Team: Infinity };
 
   /* ---------- helpers ---------- */
   function $(id) { return document.getElementById(id); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-  function used() { return parseInt(lsGet(LS_USED) || "0", 10); }
-  function bumpUsed() { lsSet(LS_USED, String(used() + 1)); }
-  function freeLeft() { return Math.max(0, FREE_LIMIT - used()); }
-  function isPaid() { return B.isPaid(); }
   function getUser() { return B.user(); }
+  function currentPlan() { var u = getUser(); return (u && u.plan) ? u.plan : "free"; }
+  function planLimit() { var l = PLAN_LIMITS[currentPlan()]; return l == null ? PLAN_LIMITS.free : l; }
+  function unlimited() { return planLimit() === Infinity; }
+  // Usage is tracked per account (or "anon") per calendar month, so it resets monthly.
+  function usedKey() {
+    var u = getUser();
+    var who = u && u.id ? u.id : (u && u.email ? u.email : "anon");
+    return "fm_used_" + who + "_" + new Date().toISOString().slice(0, 7);
+  }
+  function used() { return parseInt(lsGet(usedKey()) || "0", 10); }
+  function bumpUsed() { lsSet(usedKey(), String(used() + 1)); }
+  function quotaLeft() { return unlimited() ? Infinity : Math.max(0, planLimit() - used()); }
+  function isPaid() { return B.isPaid(); }
+  function nextTier() { return currentPlan() === "Pro" ? "Team" : "Pro"; }
   function humanSize(b) {
     if (b < 1024) return b + " B";
     if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
@@ -87,13 +98,24 @@
 
   /* ---------- usage meter ---------- */
   function renderUsage() {
-    if (isPaid()) {
-      usageText.innerHTML = "✨ <strong>Unlimited</strong> conversions on your " + getUser().plan + " plan";
-      upgradeLink.hidden = true; return;
+    var plan = currentPlan();
+    if (unlimited()) {
+      usageText.innerHTML = "✨ <strong>Unlimited</strong> conversions · " + plan + " plan";
+      upgradeLink.hidden = true;
+      return;
     }
-    var left = freeLeft();
-    usageText.innerHTML = "Free conversions left: <strong>" + left + " / " + FREE_LIMIT + "</strong>";
-    upgradeLink.hidden = left > 2;
+    var left = quotaLeft();
+    var limit = planLimit();
+    var label = plan === "free" ? "Free" : plan + " plan";
+    usageText.innerHTML = label + " · <strong>" + left + " / " + limit + "</strong> conversions left this month";
+    if (plan === "free") {
+      upgradeLink.textContent = "Upgrade for more →";
+      upgradeLink.hidden = left > 2;
+    } else {
+      // Pro running low → nudge toward Team (unlimited)
+      upgradeLink.textContent = "Go unlimited with Team →";
+      upgradeLink.hidden = left > 25;
+    }
   }
 
   /* ---------- modals ---------- */
@@ -186,7 +208,7 @@
     e.preventDefault();
     B.purchase(planModalPlan || "Pro").then(function () {
       closeModal(planModal); renderAccount(); renderUsage();
-      showToast("🎉 You're on " + (getUser().plan) + " — convert without limits!");
+      showToast("🎉 You're on " + (getUser().plan) + " plan!");
     });
   });
 
@@ -197,7 +219,8 @@
       choosePlan(plan, parseInt(btn.getAttribute("data-price") || "9", 10));
     });
   });
-  upgradeLink.addEventListener("click", function () { choosePlan("Pro", (window.FM_CONFIG.plans && window.FM_CONFIG.plans.Pro) || 9); });
+  function planPrice(plan) { return (window.FM_CONFIG.plans && window.FM_CONFIG.plans[plan]) || (plan === "Team" ? 29 : 9); }
+  upgradeLink.addEventListener("click", function () { var t = nextTier(); choosePlan(t, planPrice(t)); });
 
   /* ---------- category tabs ---------- */
   function applyCategory(cat) {
@@ -245,13 +268,19 @@
   /* ---------- gating + convert ---------- */
   convertBtn.addEventListener("click", function () {
     if (!currentFile) return;
-    if (!isPaid() && freeLeft() <= 0) {
-      showToast("You've used your free conversions — pick a plan to continue.");
-      choosePlan("Pro", (window.FM_CONFIG.plans && window.FM_CONFIG.plans.Pro) || 9);
+    if (!unlimited() && quotaLeft() <= 0) {
+      var plan = currentPlan();
+      if (plan === "free") {
+        showToast("You've used your 5 free conversions — pick a plan to keep going.");
+        choosePlan("Pro", planPrice("Pro"));
+      } else {
+        showToast("You've reached your monthly " + plan + " limit. Upgrade to Team for unlimited.");
+        choosePlan("Team", planPrice("Team"));
+      }
       return;
     }
     doConvert();
-    if (!isPaid()) { bumpUsed(); renderUsage(); }
+    if (!unlimited()) { bumpUsed(); renderUsage(); }
   });
   function doConvert() {
     if (CATS[currentCat].real && currentImage) convertImage();
@@ -344,12 +373,18 @@
     if (location.search.indexOf("checkout=success") !== -1) {
       history.replaceState({}, "", location.pathname + location.hash);
       showToast("Finalizing your subscription…");
+      $("convert").scrollIntoView({ behavior: "smooth" });
       var tries = 0;
       (function poll() {
         B.refresh().then(function () {
           renderAccount(); renderUsage();
-          if (isPaid()) { showToast("🎉 Subscription active — convert without limits!"); }
-          else if (tries < 5) { tries++; setTimeout(poll, 2000); }
+          if (isPaid()) {
+            var plan = currentPlan();
+            showToast(unlimited()
+              ? "🎉 You're on " + plan + " — unlimited conversions unlocked!"
+              : "🎉 You're on " + plan + " — " + planLimit() + " conversions/month unlocked!");
+          } else if (tries < 8) { tries++; setTimeout(poll, 2500); }
+          else { showToast("Payment received — if your plan doesn't show in a minute, refresh the page."); }
         });
       })();
     } else if (location.search.indexOf("checkout=cancel") !== -1) {
