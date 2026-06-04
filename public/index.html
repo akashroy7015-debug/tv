@@ -296,6 +296,19 @@
     </div>
   </div>
 
+  <!-- ===== Payment method Modal (live) ===== -->
+  <div class="modal-overlay" id="payModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <h3 id="payTitle">Subscribe</h3>
+      <p class="modal-sub" id="paySub"></p>
+      <button class="btn btn-primary btn-block" id="payCardBtn">💳 Pay with card</button>
+      <div class="pay-divider" id="payDivider"><span>or</span></div>
+      <div id="paypalButtons"></div>
+      <p class="modal-fine">Secure checkout · cancel anytime.</p>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
 
   <script src="config.js"></script>

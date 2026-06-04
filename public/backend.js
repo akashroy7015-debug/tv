@@ -22,6 +22,7 @@
       logout: function () { try { localStorage.removeItem(LS); } catch (e) {} return Promise.resolve(); },
       // demo "purchase" just flips the local plan (the fake card modal calls this)
       purchase: function (plan) { var u = get() || {}; u.plan = plan; set(u); return Promise.resolve({ done: true }); },
+      applyPlan: function (plan) { var u = get() || {}; u.plan = plan; set(u); },
       refresh: function () { return Promise.resolve(); },
       verify: function () { return Promise.resolve(this.isPaid()); }
     };
@@ -81,6 +82,8 @@
         if (data && data.url) { window.location.href = data.url; return { redirect: true }; }
         throw new Error((data && data.error) || "Could not start checkout");
       },
+      // Mark paid in-memory immediately (e.g. right after a PayPal approval).
+      applyPlan: function (plan) { sub = { plan: plan, status: "active" }; },
       // Ask Lemon Squeezy directly (reliable even if the webhook didn't fire).
       verify: async function () {
         if (!currentUser) return false;

@@ -152,11 +152,12 @@
   /* ---------- modals ---------- */
   function openModal(m) { m.hidden = false; document.body.style.overflow = "hidden"; }
   function closeModal(m) { m.hidden = true; document.body.style.overflow = ""; }
+  var payModal = $("payModal");
   document.addEventListener("click", function (e) {
-    if (e.target.hasAttribute && e.target.hasAttribute("data-close")) { closeModal(authModal); closeModal(planModal); }
+    if (e.target.hasAttribute && e.target.hasAttribute("data-close")) { closeModal(authModal); closeModal(planModal); if (payModal) closeModal(payModal); }
     if (e.target.classList && e.target.classList.contains("modal-overlay")) closeModal(e.target);
   });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(authModal); closeModal(planModal); } });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(authModal); closeModal(planModal); if (payModal) closeModal(payModal); } });
   function setAuthMode(mode) {
     authMode = mode;
     document.querySelectorAll(".auth-tab").forEach(function (t) { t.classList.toggle("active", t.getAttribute("data-mode") === mode); });
@@ -179,23 +180,93 @@
   var pendingPlan = null;      // {plan, price} to resume after login
   var planModalPlan = null;    // plan being confirmed in the demo card modal
 
-  // Choose a plan: ensure logged in, then checkout (Stripe in live, fake card modal in demo).
+  // Choose a plan: ensure logged in, then pick a payment method.
   function choosePlan(plan, price) {
-    if (!getUser()) { pendingPlan = { plan: plan, price: price }; openAuth(); return; }
+    if (!getUser()) { pendingPlan = { plan: plan, price: price }; openAuth("login"); return; }
     if (B.demo) {
       planModalPlan = plan;
-      planSub.textContent = plan + " — $" + price + "/mo, unlimited conversions. Cancel anytime.";
+      planSub.textContent = plan + " — $" + price + "/mo. Cancel anytime.";
       $("payBtn").textContent = "Subscribe to " + plan + " — $" + price + "/mo";
       openModal(planModal);
-    } else {
-      showToast("Redirecting to secure checkout…");
-      B.purchase(plan).catch(function (err) {
-        showToast(err.message || "Checkout failed");
-        alert("Checkout error:\n\n" + (err.message || "unknown error") +
-          "\n\nThis usually means a Lemon Squeezy setting in Cloudflare is missing/incorrect " +
-          "(LEMONSQUEEZY_API_KEY, STORE_ID, VARIANT_PRO/TEAM).");
-      });
+      return;
     }
+    var pp = window.FM_CONFIG.paypal;
+    if (pp && pp.clientId) { openPay(plan, price); return; } // offer card + PayPal
+    startCardCheckout(plan); // Lemon Squeezy only
+  }
+
+  function startCardCheckout(plan) {
+    showToast("Redirecting to secure checkout…");
+    B.purchase(plan).catch(function (err) {
+      showToast(err.message || "Checkout failed");
+      alert("Checkout error:\n\n" + (err.message || "unknown error") +
+        "\n\nThis usually means a Lemon Squeezy setting in Cloudflare is missing/incorrect.");
+    });
+  }
+
+  /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
+  var currentPayPlan = null;
+  function openPay(plan, price) {
+    currentPayPlan = { plan: plan, price: price };
+    $("payTitle").textContent = "Subscribe to " + plan;
+    $("paySub").textContent = "$" + price + "/month · cancel anytime";
+    openModal(payModal);
+    renderPayPal(plan);
+  }
+  var payCardBtn = $("payCardBtn");
+  if (payCardBtn) payCardBtn.addEventListener("click", function () {
+    if (payModal) closeModal(payModal);
+    if (currentPayPlan) startCardCheckout(currentPayPlan.plan);
+  });
+
+  var _ppLoading = null;
+  function loadPayPalSDK() {
+    var pp = window.FM_CONFIG.paypal;
+    if (window.paypal) return Promise.resolve();
+    if (_ppLoading) return _ppLoading;
+    _ppLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&vary=subscription&intent=subscription&components=buttons";
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
+      document.head.appendChild(s);
+    });
+    return _ppLoading;
+  }
+  function renderPayPal(plan) {
+    var pp = window.FM_CONFIG.paypal;
+    var box = $("paypalButtons"), divider = $("payDivider");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!pp || !pp.clientId) { if (divider) divider.style.display = "none"; return; }
+    if (divider) divider.style.display = "";
+    loadPayPalSDK().then(function () {
+      var planId = plan === "Team" ? pp.planTeam : pp.planPro;
+      var user = getUser();
+      window.paypal.Buttons({
+        style: { layout: "vertical", color: "gold", shape: "pill", label: "subscribe" },
+        createSubscription: function (data, actions) {
+          return actions.subscription.create({ plan_id: planId, custom_id: user ? user.id : "" });
+        },
+        onApprove: function (data) {
+          box.innerHTML = "<small style='color:var(--muted)'>Confirming your subscription…</small>";
+          fetch("/api/paypal-verify", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subscriptionID: data.subscriptionID, userId: user ? user.id : null })
+          }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d && d.active) {
+              if (B.applyPlan) B.applyPlan(d.plan);
+              if (payModal) closeModal(payModal);
+              renderAccount(); renderUsage();
+              showToast("🎉 You're on " + d.plan + " — thank you!");
+            } else {
+              box.innerHTML = "<small style='color:#ff6b6b'>" + ((d && d.error) || "Could not confirm subscription") + "</small>";
+            }
+          }).catch(function (e) { box.innerHTML = "<small style='color:#ff6b6b'>" + e.message + "</small>"; });
+        },
+        onError: function () { showToast("PayPal error — try the card option."); }
+      }).render("#paypalButtons");
+    }).catch(function () { if (divider) divider.style.display = "none"; });
   }
 
   function friendlyAuthError(msg) {

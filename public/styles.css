@@ -414,3 +414,9 @@ input[type=range] { accent-color: var(--accent); height: 6px; }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ===== Payment method modal ===== */
+.pay-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: .82rem; margin: 16px 0; }
+.pay-divider::before, .pay-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+#paypalButtons { min-height: 46px; }
+#payCardBtn { margin-bottom: 2px; }

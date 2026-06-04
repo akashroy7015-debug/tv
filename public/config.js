@@ -7,5 +7,8 @@ window.FM_CONFIG = {
   supabaseUrl: "https://cdqiqvlskzelnhwfmiux.supabase.co",
   supabaseAnonKey: "sb_publishable_l7fIG3GIKW4P3sCkOg5pzQ_kra8f50b", // publishable key (safe in browser)
   checkoutEndpoint: "/api/create-checkout-session",
-  plans: { Pro: 9, Team: 29 }
+  plans: { Pro: 9, Team: 29 },
+  // Direct PayPal (optional). Fill clientId + plan IDs to show a PayPal button at checkout.
+  // Leave clientId "" to hide PayPal and use card (Lemon Squeezy) only.
+  paypal: { clientId: "", planPro: "", planTeam: "", env: "sandbox" }
 };

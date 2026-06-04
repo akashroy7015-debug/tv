@@ -2,6 +2,8 @@
 import { onRequestPost as createCheckout } from "./functions/api/create-checkout-session.js";
 import { onRequestPost as lemonWebhook } from "./functions/api/lemon-webhook.js";
 import { onRequestPost as verifySub } from "./functions/api/verify-subscription.js";
+import { onRequestPost as paypalVerify } from "./functions/api/paypal-verify.js";
+import { onRequestGet as paypalSetup } from "./functions/api/paypal-setup.js";
 
 export default {
   async fetch(request, env) {
@@ -14,6 +16,12 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/verify-subscription") {
       return verifySub({ request, env });
+    }
+    if (request.method === "POST" && url.pathname === "/api/paypal-verify") {
+      return paypalVerify({ request, env });
+    }
+    if (request.method === "GET" && url.pathname === "/api/paypal-setup") {
+      return paypalSetup({ request, env });
     }
     // Anything else → static site
     return env.ASSETS.fetch(request);
