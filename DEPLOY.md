@@ -30,34 +30,34 @@ Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
 3. **GoDaddy → filemorph.shop → Nameservers → Change → "Enter my own"** → paste the two
    Cloudflare nameservers → Save. (Propagates in minutes–hours; replaces old records.)
 
-## 4. Deploy to Cloudflare Pages
-1. **Workers & Pages → Create** → choose the **Pages** tab → **Connect to Git**
-   (⚠️ use the **Pages** tab, NOT "Import a repository" — that makes a Worker and will fail).
-2. Select `akashroy7015-debug/tv`. Production branch: `claude/zen-ramanujan-919NL`.
-3. Build settings:
-   - **Framework preset:** None
-   - **Build command:** *(empty)*
-   - **Build output directory:** `public`
-   - **Root directory (Advanced):** *(leave blank — the site is at the repo root now)*
-4. **Environment variables** — add:
+## 4. Deploy on Cloudflare (Worker with static assets)
+The repo includes `wrangler.toml` + `worker.js`, so a Cloudflare **Worker** deploys the whole
+thing (static site from `public/` + the `/api/*` functions). Use the project you already created.
+
+1. Open the project in **Workers & Pages**.
+2. **Settings → Build** (or Builds & deployments):
+   - **Production branch:** `claude/zen-ramanujan-919NL`  ← important: the clean branch
+   - **Build command:** *(empty)*  ·  **Deploy command:** `npx wrangler deploy`
+   - Root/output: leave default — `wrangler.toml` handles it.
+3. **Settings → Variables and Secrets** — add:
    | Name | Value |
    |------|-------|
    | `LEMONSQUEEZY_API_KEY` | your API key |
    | `LEMONSQUEEZY_STORE_ID` | your store ID (number) |
    | `LEMONSQUEEZY_VARIANT_PRO` | Pro variant ID |
    | `LEMONSQUEEZY_VARIANT_TEAM` | Team variant ID |
-   | `LEMONSQUEEZY_WEBHOOK_SECRET` | *(you'll set this in step 6)* |
+   | `LEMONSQUEEZY_WEBHOOK_SECRET` | *(set in step 6)* |
    | `SUPABASE_URL` | `https://xxxx.supabase.co` |
    | `SUPABASE_SERVICE_ROLE_KEY` | service_role key |
-5. **Save and Deploy** → you get `filemorph.pages.dev`.
-6. After it deploys: project → **Settings → Functions → Compatibility flags** → add
-   **`nodejs_compat`** to **Production** (and Preview) → **Retry deployment**.
+4. **Deployments → Retry / Create deployment.** You get a `*.workers.dev` URL.
+   (`nodejs_compat` is already set in `wrangler.toml`.)
 
-> Layout note: static site is in `public/`, serverless code in `functions/`, deps in
-> `package.json` — all at the repo root. Build output directory = `public`.
+> Layout: static site in `public/`, API in `functions/`, `worker.js` routes `/api/*`,
+> `wrangler.toml` ties them together. Deps in `package.json` (just Supabase).
 
 ## 5. Add your custom domain
-Pages project → **Custom domains** → add `filemorph.shop` and `www.filemorph.shop`.
+Worker project → **Settings → Domains & Routes → Add → Custom domain** → `filemorph.shop`
+(and `www.filemorph.shop`). Cloudflare manages DNS, so records + SSL are automatic.
 Cloudflare manages the DNS now, so records + SSL are automatic.
 
 ## 6. Lemon Squeezy webhook

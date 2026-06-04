@@ -1,0 +1,9 @@
+name = "filemorph"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the static site from public/ and expose it to the Worker as env.ASSETS
+[assets]
+directory = "./public"
+binding = "ASSETS"
