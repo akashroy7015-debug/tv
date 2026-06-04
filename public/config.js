@@ -10,5 +10,5 @@ window.FM_CONFIG = {
   plans: { Pro: 9, Team: 29 },
   // Direct PayPal (optional). Fill clientId + plan IDs to show a PayPal button at checkout.
   // Leave clientId "" to hide PayPal and use card (Lemon Squeezy) only.
-  paypal: { clientId: "AduK6Lrw75EHf2EntZ3A-3aQ4FRsbkMSHU0clihbX23KggjCAo6Rb-x3xsZ5JGUbQKkN1kHHQLa52Sgp", planPro: "", planTeam: "", env: "sandbox" }
+  paypal: { clientId: "AbfY1i6NmDs1dRrKSoT7L1zcTwg6qj3LJtbYoTPOH5B82iiPW3zKW5hT49FWhXkwt4yfTvge9ZzRyIxI", planPro: "", planTeam: "", env: "live" }
 };
