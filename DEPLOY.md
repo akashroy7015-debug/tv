@@ -33,12 +33,12 @@ Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
 ## 4. Deploy to Cloudflare Pages
 1. **Workers & Pages → Create** → choose the **Pages** tab → **Connect to Git**
    (⚠️ use the **Pages** tab, NOT "Import a repository" — that makes a Worker and will fail).
-2. Select `akashroy7015-debug/tv`. Production branch: `claude/focused-planck-9YXe4`.
+2. Select `akashroy7015-debug/tv`. Production branch: `claude/zen-ramanujan-919NL`.
 3. Build settings:
    - **Framework preset:** None
    - **Build command:** *(empty)*
    - **Build output directory:** `public`
-   - **Root directory (Advanced):** `website`
+   - **Root directory (Advanced):** *(leave blank — the site is at the repo root now)*
 4. **Environment variables** — add:
    | Name | Value |
    |------|-------|
@@ -53,8 +53,8 @@ Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
 6. After it deploys: project → **Settings → Functions → Compatibility flags** → add
    **`nodejs_compat`** to **Production** (and Preview) → **Retry deployment**.
 
-> Layout note: static site is in `website/public/`, serverless code in `website/functions/`,
-> deps in `website/package.json`. That's why Root directory = `website` and output = `public`.
+> Layout note: static site is in `public/`, serverless code in `functions/`, deps in
+> `package.json` — all at the repo root. Build output directory = `public`.
 
 ## 5. Add your custom domain
 Pages project → **Custom domains** → add `filemorph.shop` and `www.filemorph.shop`.
