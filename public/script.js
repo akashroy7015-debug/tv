@@ -238,10 +238,10 @@
     var box = $("paypalButtons"), divider = $("payDivider");
     if (!box) return;
     box.innerHTML = "";
-    if (!pp || !pp.clientId) { if (divider) divider.style.display = "none"; return; }
+    var planId = plan === "Team" ? (pp && pp.planTeam) : (pp && pp.planPro);
+    if (!pp || !pp.clientId || !planId) { if (divider) divider.style.display = "none"; return; }
     if (divider) divider.style.display = "";
     loadPayPalSDK().then(function () {
-      var planId = plan === "Team" ? pp.planTeam : pp.planPro;
       var user = getUser();
       window.paypal.Buttons({
         style: { layout: "vertical", color: "gold", shape: "pill", label: "subscribe" },
