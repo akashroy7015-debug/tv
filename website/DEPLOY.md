@@ -31,12 +31,13 @@ Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
    Cloudflare nameservers → Save. (Propagates in minutes–hours; replaces old records.)
 
 ## 4. Deploy to Cloudflare Pages
-1. **Workers & Pages → Create → Pages → Connect to Git** → pick `akashroy7015-debug/tv`.
-2. Production branch: `claude/focused-planck-9YXe4`.
+1. **Workers & Pages → Create** → choose the **Pages** tab → **Connect to Git**
+   (⚠️ use the **Pages** tab, NOT "Import a repository" — that makes a Worker and will fail).
+2. Select `akashroy7015-debug/tv`. Production branch: `claude/focused-planck-9YXe4`.
 3. Build settings:
    - **Framework preset:** None
    - **Build command:** *(empty)*
-   - **Build output directory:** `website`
+   - **Build output directory:** `public`
    - **Root directory (Advanced):** `website`
 4. **Environment variables** — add:
    | Name | Value |
@@ -45,10 +46,15 @@ Test in Lemon Squeezy **Test mode** first. Budget ~40 min.
    | `LEMONSQUEEZY_STORE_ID` | your store ID (number) |
    | `LEMONSQUEEZY_VARIANT_PRO` | Pro variant ID |
    | `LEMONSQUEEZY_VARIANT_TEAM` | Team variant ID |
-   | `LEMONSQUEEZY_WEBHOOK_SECRET` | *(you'll choose this in step 6)* |
+   | `LEMONSQUEEZY_WEBHOOK_SECRET` | *(you'll set this in step 6)* |
    | `SUPABASE_URL` | `https://xxxx.supabase.co` |
    | `SUPABASE_SERVICE_ROLE_KEY` | service_role key |
-5. **Save and Deploy** → you get `filemorph.pages.dev`. (`wrangler.toml` already sets `nodejs_compat`.)
+5. **Save and Deploy** → you get `filemorph.pages.dev`.
+6. After it deploys: project → **Settings → Functions → Compatibility flags** → add
+   **`nodejs_compat`** to **Production** (and Preview) → **Retry deployment**.
+
+> Layout note: static site is in `website/public/`, serverless code in `website/functions/`,
+> deps in `website/package.json`. That's why Root directory = `website` and output = `public`.
 
 ## 5. Add your custom domain
 Pages project → **Custom domains** → add `filemorph.shop` and `www.filemorph.shop`.

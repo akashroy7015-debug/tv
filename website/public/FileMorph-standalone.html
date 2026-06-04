@@ -999,8 +999,16 @@ window.FM_CONFIG = {
   /* ---------- checkout return ---------- */
   function handleReturn() {
     if (location.search.indexOf("checkout=success") !== -1) {
-      B.refresh().then(function () { renderAccount(); renderUsage(); showToast("🎉 Subscription active — convert without limits!"); });
       history.replaceState({}, "", location.pathname + location.hash);
+      showToast("Finalizing your subscription…");
+      var tries = 0;
+      (function poll() {
+        B.refresh().then(function () {
+          renderAccount(); renderUsage();
+          if (isPaid()) { showToast("🎉 Subscription active — convert without limits!"); }
+          else if (tries < 5) { tries++; setTimeout(poll, 2000); }
+        });
+      })();
     } else if (location.search.indexOf("checkout=cancel") !== -1) {
       showToast("Checkout canceled — no charge made.");
       history.replaceState({}, "", location.pathname + location.hash);
