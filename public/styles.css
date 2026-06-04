@@ -278,6 +278,10 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
   backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 .modal-overlay[hidden] { display: none; }
+.auth-tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+.auth-tab { flex: 1; background: transparent; border: none; color: var(--muted); padding: 9px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all .15s; }
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active { background: var(--accent-grad); color: #fff; }
 .modal {
   position: relative; width: 100%; max-width: 400px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius); padding: 30px 26px; box-shadow: var(--shadow);

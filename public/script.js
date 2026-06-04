@@ -43,6 +43,8 @@
   var formatSelect = $("formatSelect"), qualityRange = $("qualityRange"), qualityVal = $("qualityVal"), qualityWrap = $("qualityWrap");
   var convertBtn = $("convertBtn"), previewWrap = $("previewWrap"), previewImg = $("previewImg"), origMeta = $("origMeta"), resultBox = $("resultBox");
   var authModal = $("authModal"), authForm = $("authForm"), authEmail = $("authEmail"), authPass = $("authPass");
+  var authSub = $("authSub"), authSubmit = $("authSubmit"), authMsg = $("authMsg");
+  var authMode = "login";
   var planModal = $("planModal"), planForm = $("planForm"), planSub = $("planSub");
   var toast = $("toast");
 
@@ -75,10 +77,11 @@
     } else {
       var login = document.createElement("button");
       login.className = "btn btn-ghost btn-sm"; login.textContent = "Log in";
-      login.addEventListener("click", function () { openAuth(); });
-      var start = document.createElement("a");
-      start.className = "btn btn-primary btn-sm"; start.href = "#convert"; start.textContent = "Start free";
-      navAccount.appendChild(login); navAccount.appendChild(start);
+      login.addEventListener("click", function () { openAuth("login"); });
+      var signup = document.createElement("button");
+      signup.className = "btn btn-primary btn-sm"; signup.textContent = "Sign up";
+      signup.addEventListener("click", function () { openAuth("signup"); });
+      navAccount.appendChild(login); navAccount.appendChild(signup);
     }
   }
 
@@ -101,7 +104,24 @@
     if (e.target.classList && e.target.classList.contains("modal-overlay")) closeModal(e.target);
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeModal(authModal); closeModal(planModal); } });
-  function openAuth() { openModal(authModal); setTimeout(function () { authEmail.focus(); }, 50); }
+  function setAuthMode(mode) {
+    authMode = mode;
+    document.querySelectorAll(".auth-tab").forEach(function (t) { t.classList.toggle("active", t.getAttribute("data-mode") === mode); });
+    if (mode === "signup") {
+      $("authTitle").textContent = "Create your account";
+      authSub.textContent = "Sign up — we'll email you a verification link.";
+      authSubmit.textContent = "Sign up";
+    } else {
+      $("authTitle").textContent = "Welcome back";
+      authSub.textContent = "Log in to your FileMorph account.";
+      authSubmit.textContent = "Log in";
+    }
+    authMsg.style.color = ""; authMsg.textContent = "Secure accounts powered by Supabase.";
+  }
+  function openAuth(mode) { setAuthMode(mode || "login"); openModal(authModal); setTimeout(function () { authEmail.focus(); }, 50); }
+  document.querySelectorAll(".auth-tab").forEach(function (t) {
+    t.addEventListener("click", function () { setAuthMode(t.getAttribute("data-mode")); });
+  });
 
   var pendingPlan = null;      // {plan, price} to resume after login
   var planModalPlan = null;    // plan being confirmed in the demo card modal
@@ -125,13 +145,40 @@
     }
   }
 
+  function friendlyAuthError(msg) {
+    msg = msg || "";
+    if (/email not confirmed/i.test(msg)) return "Please verify your email first — check your inbox for the link, then log in.";
+    if (/invalid login credentials/i.test(msg)) return "Wrong email or password. New here? Switch to “Sign up”.";
+    if (/already registered|already been registered/i.test(msg)) return "That email is already registered — switch to “Log in”.";
+    return msg;
+  }
+
   authForm.addEventListener("submit", function (e) {
     e.preventDefault();
-    B.signIn(authEmail.value.trim(), authPass.value).then(function (u) {
-      closeModal(authModal); renderAccount(); renderUsage();
-      showToast("Welcome, " + u.email);
-      if (pendingPlan) { var p = pendingPlan; pendingPlan = null; choosePlan(p.plan, p.price); }
-    }).catch(function (err) { showToast(err.message || "Sign-in failed"); });
+    var email = authEmail.value.trim(), pass = authPass.value;
+    authMsg.style.color = ""; authMsg.textContent = "Please wait…";
+    if (authMode === "signup") {
+      B.signUp(email, pass).then(function (res) {
+        if (res && res.needsVerification) {
+          setAuthMode("login");
+          authEmail.value = email; authPass.value = "";
+          authMsg.style.color = "var(--accent-2)";
+          authMsg.textContent = "✓ Verification email sent to " + email + ". Click the link, then log in.";
+        } else {
+          closeModal(authModal); renderAccount(); renderUsage(); showToast("Welcome, " + email);
+          if (pendingPlan) { var p = pendingPlan; pendingPlan = null; choosePlan(p.plan, p.price); }
+        }
+      }).catch(function (err) {
+        authMsg.style.color = "#ff6b6b"; authMsg.textContent = friendlyAuthError(err.message);
+      });
+    } else {
+      B.signIn(email, pass).then(function (u) {
+        closeModal(authModal); renderAccount(); renderUsage(); showToast("Welcome back, " + u.email);
+        if (pendingPlan) { var p = pendingPlan; pendingPlan = null; choosePlan(p.plan, p.price); }
+      }).catch(function (err) {
+        authMsg.style.color = "#ff6b6b"; authMsg.textContent = friendlyAuthError(err.message);
+      });
+    }
   });
 
   // Demo card modal → flip plan locally.

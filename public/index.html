@@ -261,14 +261,18 @@
   <div class="modal-overlay" id="authModal" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <button class="modal-close" data-close aria-label="Close">×</button>
-      <h3 id="authTitle">Log in or sign up</h3>
-      <p class="modal-sub">Create your FileMorph account to keep converting.</p>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-mode="login">Log in</button>
+        <button type="button" class="auth-tab" data-mode="signup">Sign up</button>
+      </div>
+      <h3 id="authTitle">Welcome back</h3>
+      <p class="modal-sub" id="authSub">Log in to your FileMorph account.</p>
       <form id="authForm" class="modal-form">
         <label>Email<input type="email" id="authEmail" required placeholder="you@example.com" /></label>
-        <label>Password<input type="password" id="authPass" required placeholder="••••••••" minlength="4" /></label>
-        <button type="submit" class="btn btn-primary btn-block">Continue</button>
+        <label>Password<input type="password" id="authPass" required placeholder="••••••••" minlength="6" /></label>
+        <button type="submit" class="btn btn-primary btn-block" id="authSubmit">Log in</button>
       </form>
-      <p class="modal-fine">Secure accounts powered by Supabase.</p>
+      <p class="modal-fine" id="authMsg">Secure accounts powered by Supabase.</p>
     </div>
   </div>
 

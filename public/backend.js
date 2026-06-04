@@ -18,6 +18,7 @@
       user: function () { return get(); },
       isPaid: function () { var u = get(); return !!(u && u.plan && u.plan !== "free"); },
       signIn: function (email) { var u = get() || {}; u.email = email; u.plan = u.plan || "free"; set(u); return Promise.resolve(u); },
+      signUp: function (email) { var u = get() || {}; u.email = email; u.plan = u.plan || "free"; set(u); return Promise.resolve({ needsVerification: false }); },
       logout: function () { try { localStorage.removeItem(LS); } catch (e) {} return Promise.resolve(); },
       // demo "purchase" just flips the local plan (the fake card modal calls this)
       purchase: function (plan) { var u = get() || {}; u.plan = plan; set(u); return Promise.resolve({ done: true }); },
@@ -54,16 +55,19 @@
       },
       isPaid: paid,
       signIn: async function (email, password) {
+        // Login only — does NOT create an account.
         var r = await sb.auth.signInWithPassword({ email: email, password: password });
-        if (r.error) {
-          var up = await sb.auth.signUp({ email: email, password: password });
-          if (up.error) throw up.error;
-          if (!up.data.session) throw new Error("Account created — check your email to confirm, then log in.");
-        }
+        if (r.error) throw r.error;
         var u = await sb.auth.getUser();
         currentUser = u.data.user;
         await loadSub();
         return this.user();
+      },
+      signUp: async function (email, password) {
+        var r = await sb.auth.signUp({ email: email, password: password });
+        if (r.error) throw r.error;
+        if (r.data.session) { currentUser = r.data.user; await loadSub(); return { needsVerification: false }; }
+        return { needsVerification: true }; // email confirmation required
       },
       logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; },
       purchase: async function (plan) {
