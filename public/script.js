@@ -85,9 +85,12 @@
       var c = B.credits ? (B.credits() || 0) : 0;
       var chip = document.createElement("span");
       chip.className = "account-chip";
-      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email +
-        (c > 0 ? " · <strong>" + c + "</strong> cr" : "");
+      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email;
       navAccount.appendChild(chip);
+      var credChip = document.createElement("span");
+      credChip.className = "account-chip credits-chip"; credChip.title = "Conversion credits";
+      credChip.innerHTML = "🎟️ <strong>" + c + "</strong>";
+      navAccount.appendChild(credChip);
       if (isPaid()) {
         var manage = document.createElement("button");
         manage.className = "btn btn-ghost btn-sm"; manage.textContent = "Manage";
@@ -533,8 +536,8 @@
     if (creditsLeft() > 0) {
       doConvert(function () {
         B.spendCredit().then(function (bal) {
-          renderUsage();
-          if (bal < 0) showToast("Heads up: that used your last credit.");
+          renderUsage(); renderAccount();
+          if (bal === 0) showToast("That was your last credit.");
         });
       });
       return;
