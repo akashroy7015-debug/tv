@@ -251,29 +251,29 @@
   /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
   var currentPayPlan = null;
   function creditRate() { return (window.FM_CONFIG.credits && window.FM_CONFIG.credits.rate) || 0.10; }
-  function currentCreditQty() {
+  function currentDollar() {
     var cc = window.FM_CONFIG.credits || {};
-    var v = parseInt(($("creditQty") && $("creditQty").value) || "50", 10) || 50;
-    return Math.max(cc.min || 10, Math.min(cc.max || 5000, v));
+    var v = parseFloat(($("creditQty") && $("creditQty").value) || "5") || 5;
+    return Math.max(cc.min || 1, Math.min(cc.max || 500, v));
   }
+  function currentCreditQty() { return Math.max(1, Math.round(currentDollar() / creditRate())); }
   function updateCreditPrice() {
-    var qty = currentCreditQty();
-    var price = (qty * creditRate()).toFixed(2);
-    if ($("creditPrice")) $("creditPrice").innerHTML = qty + " credits = <span>$" + price + "</span>";
-    var input = $("creditQty");
+    var dollar = currentDollar();
+    var credits = Math.round(dollar / creditRate());
+    if ($("creditPrice")) $("creditPrice").innerHTML = "$" + dollar.toFixed(2) + " = <span>" + credits + " credits</span>";
     document.querySelectorAll("#creditQuick button").forEach(function (b) {
-      b.classList.toggle("sel", input && parseInt(b.getAttribute("data-q"), 10) === currentCreditQty());
+      b.classList.toggle("sel", parseFloat(b.getAttribute("data-q")) === currentDollar());
     });
   }
   function buildCreditPicker() {
-    var presets = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.presets) || [20, 50, 100, 200, 500];
+    var presets = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.presets) || [2, 5, 10, 20, 50];
     var quick = $("creditQuick");
     if (quick) {
       quick.innerHTML = "";
-      presets.forEach(function (q) {
+      presets.forEach(function (d) {
         var b = document.createElement("button");
-        b.type = "button"; b.textContent = q; b.setAttribute("data-q", q);
-        b.addEventListener("click", function () { if ($("creditQty")) $("creditQty").value = q; updateCreditPrice(); });
+        b.type = "button"; b.textContent = "$" + d; b.setAttribute("data-q", d);
+        b.addEventListener("click", function () { if ($("creditQty")) $("creditQty").value = d; updateCreditPrice(); });
         quick.appendChild(b);
       });
     }
@@ -286,7 +286,7 @@
     var picker = $("creditPicker");
     if (plan === "credits") {
       $("payTitle").textContent = "Buy credits";
-      $("paySub").textContent = "Pick an amount — credits never expire (1 credit = 1 conversion).";
+      $("paySub").textContent = "Enter an amount — you'll get credits (1 credit = 1 conversion, never expire).";
       if (picker) picker.hidden = false;
       buildCreditPicker();
     } else {

@@ -8,8 +8,8 @@ window.FM_CONFIG = {
   supabaseAnonKey: "sb_publishable_l7fIG3GIKW4P3sCkOg5pzQ_kra8f50b", // publishable key (safe in browser)
   checkoutEndpoint: "/api/create-checkout-session",
   plans: { Pro: 9, Team: 29 },
-  // Pay-as-you-go: user picks the amount. rate = price per credit (must match CREDIT_RATE in Cloudflare).
-  credits: { rate: 0.10, presets: [20, 50, 100, 200, 500], min: 10, max: 5000 },
+  // Pay-as-you-go: user enters a $ amount. rate = price per credit (must match CREDIT_RATE in Cloudflare).
+  credits: { rate: 0.10, presets: [2, 5, 10, 20, 50], min: 1, max: 500 },
   // Direct PayPal (optional). Fill clientId + plan IDs to show a PayPal button at checkout.
   // Leave clientId "" to hide PayPal and use card (Lemon Squeezy) only.
   paypal: { clientId: "AbfY1i6NmDs1dRrKSoT7L1zcTwg6qj3LJtbYoTPOH5B82iiPW3zKW5hT49FWhXkwt4yfTvge9ZzRyIxI", planPro: "P-9LS40434WE552315VNIQ3PYI", planTeam: "P-0TH89402KG975712XNIQ3QKY", env: "live" }
