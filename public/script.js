@@ -316,11 +316,12 @@
   var _ppLoading = null;
   function loadPayPalSDK() {
     var pp = window.FM_CONFIG.paypal;
-    if (window.paypal) return Promise.resolve();
+    if (window.paypalSub) return Promise.resolve();
     if (_ppLoading) return _ppLoading;
     _ppLoading = new Promise(function (resolve, reject) {
       var s = document.createElement("script");
       s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&vault=true&intent=subscription&components=buttons";
+      s.setAttribute("data-namespace", "paypalSub");
       s.onload = resolve;
       s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
       document.head.appendChild(s);
@@ -337,7 +338,7 @@
     if (divider) divider.style.display = "";
     loadPayPalSDK().then(function () {
       var user = getUser();
-      window.paypal.Buttons({
+      window.paypalSub.Buttons({
         style: { layout: "vertical", color: "gold", shape: "pill", label: "subscribe" },
         createSubscription: function (data, actions) {
           return actions.subscription.create({ plan_id: planId, custom_id: user ? user.id : "" });
