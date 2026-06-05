@@ -399,7 +399,11 @@
           return fetch("/api/paypal-create-order", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: user ? user.id : null, credits: currentCreditQty() })
-          }).then(function (r) { return r.json(); }).then(function (d) { if (d.id) return d.id; throw new Error(d.error || "order failed"); });
+          }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d.id) return d.id;
+            box.innerHTML = "<small style='color:#ff6b6b'>PayPal: " + (d.error || "couldn't create order") + "</small>";
+            throw new Error(d.error || "order failed");
+          });
         },
         onApprove: function (data) {
           box.innerHTML = "<small style='color:var(--muted)'>Confirming your payment…</small>";
@@ -416,7 +420,9 @@
             }
           });
         },
-        onError: function () { showToast("PayPal error — try the card option."); }
+        onError: function (err) {
+          box.innerHTML = "<small style='color:#ff6b6b'>PayPal error: " + (err && err.message ? err.message : "see console") + " — or use the card option.</small>";
+        }
       }).render("#paypalButtons").catch(function () {
         box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
       });
