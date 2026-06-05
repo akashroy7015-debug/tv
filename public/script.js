@@ -215,10 +215,13 @@
     });
   }
 
-  // Pay-as-you-go credit pack (one-time purchase via card).
+  // Pay-as-you-go credit pack (one-time purchase, card or PayPal).
   function buyCredits() {
     if (B.demo) { showToast("Credits aren't available in demo mode."); return; }
     if (!getUser()) { pendingPlan = { plan: "credits" }; openAuth("login"); return; }
+    var pp = window.FM_CONFIG.paypal;
+    var price = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.price) || 5;
+    if (pp && pp.clientId) { openPay("credits", price); return; }
     startCardCheckout("credits");
   }
 
@@ -226,10 +229,16 @@
   var currentPayPlan = null;
   function openPay(plan, price) {
     currentPayPlan = { plan: plan, price: price };
-    $("payTitle").textContent = "Subscribe to " + plan;
-    $("paySub").textContent = "$" + price + "/month · cancel anytime";
+    if (plan === "credits") {
+      var pack = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.pack) || 50;
+      $("payTitle").textContent = "Buy " + pack + " credits";
+      $("paySub").textContent = "$" + price + " one-time · credits never expire";
+    } else {
+      $("payTitle").textContent = "Subscribe to " + plan;
+      $("paySub").textContent = "$" + price + "/month · cancel anytime";
+    }
     openModal(payModal);
-    renderPayPal(plan);
+    if (plan === "credits") renderPayPalOrder(price); else renderPayPal(plan);
   }
   var payCardBtn = $("payCardBtn");
   if (payCardBtn) payCardBtn.addEventListener("click", function () {
@@ -289,6 +298,61 @@
     }).catch(function () {
       box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
     });
+  }
+
+  /* ---------- PayPal one-time order (credit packs) ---------- */
+  var _ppOrderLoading = null;
+  function loadPayPalOrderSDK() {
+    var pp = window.FM_CONFIG.paypal;
+    if (window.paypalOrder) return Promise.resolve();
+    if (_ppOrderLoading) return _ppOrderLoading;
+    _ppOrderLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&intent=capture&currency=USD&components=buttons";
+      s.setAttribute("data-namespace", "paypalOrder");
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
+      document.head.appendChild(s);
+    });
+    return _ppOrderLoading;
+  }
+  function renderPayPalOrder(price) {
+    var pp = window.FM_CONFIG.paypal;
+    var box = $("paypalButtons"), divider = $("payDivider");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!pp || !pp.clientId) { if (divider) divider.style.display = "none"; return; }
+    if (divider) divider.style.display = "";
+    var user = getUser();
+    loadPayPalOrderSDK().then(function () {
+      window.paypalOrder.Buttons({
+        style: { layout: "vertical", color: "gold", shape: "pill", label: "pay" },
+        createOrder: function () {
+          return fetch("/api/paypal-create-order", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user ? user.id : null })
+          }).then(function (r) { return r.json(); }).then(function (d) { if (d.id) return d.id; throw new Error(d.error || "order failed"); });
+        },
+        onApprove: function (data) {
+          box.innerHTML = "<small style='color:var(--muted)'>Confirming your payment…</small>";
+          return fetch("/api/paypal-capture-order", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderID: data.orderID, userId: user ? user.id : null })
+          }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d && d.ok) {
+              if (payModal) closeModal(payModal);
+              (B.refresh ? B.refresh() : Promise.resolve()).then(function () { renderUsage(); });
+              showToast("✓ " + (d.added || "") + " credits added — thank you!");
+            } else {
+              box.innerHTML = "<small style='color:#ff6b6b'>" + ((d && d.error) || "Couldn't add credits") + "</small>";
+            }
+          });
+        },
+        onError: function () { showToast("PayPal error — try the card option."); }
+      }).render("#paypalButtons").catch(function () {
+        box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
+      });
+    }).catch(function () { if (divider) divider.style.display = "none"; });
   }
 
   function friendlyAuthError(msg) {
@@ -401,13 +465,13 @@
     if (unlimited()) { doConvert(); return; }
     // 2) Monthly quota (free or Pro) left → convert, count it locally.
     if (quotaLeft() > 0) { doConvert(); bumpUsed(); renderUsage(); return; }
-    // 3) Pay-as-you-go credits → spend one server-side, then convert.
+    // 3) Pay-as-you-go credits → convert, and only spend a credit if it succeeds.
     if (creditsLeft() > 0) {
-      convertBtn.disabled = true;
-      B.spendCredit().then(function (bal) {
-        convertBtn.disabled = false;
-        if (bal >= 0) { doConvert(); renderUsage(); }
-        else { outOfConversions(); }
+      doConvert(function () {
+        B.spendCredit().then(function (bal) {
+          renderUsage();
+          if (bal < 0) showToast("Heads up: that used your last credit.");
+        });
       });
       return;
     }
@@ -424,10 +488,10 @@
     }
     document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
   }
-  function doConvert() {
+  function doConvert(onSuccess) {
     var engine = CATS[currentCat].engine;
-    if (engine === "image" && currentImage) convertImage();
-    else if (engine === "ffmpeg") ffmpegConvert();
+    if (engine === "image" && currentImage) convertImage(onSuccess);
+    else if (engine === "ffmpeg") ffmpegConvert(onSuccess);
     else comingSoon();
   }
   function comingSoon() {
@@ -458,7 +522,7 @@
     })();
     return _ffLoading;
   }
-  function ffmpegConvert() {
+  function ffmpegConvert(onSuccess) {
     var fmt = formatSelect.value;
     var inName = "in_" + (currentFile.name || "file").replace(/[^\w.\-]/g, "_");
     var outName = "out." + fmt;
@@ -484,6 +548,7 @@
           var dl = document.createElement("a");
           dl.href = url; dl.download = currentName + "." + fmt; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + fmt;
           resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
+          if (typeof onSuccess === "function") onSuccess();
         });
     }).catch(function (e) {
       resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e) + ". Try a smaller file or a different format.";
@@ -492,7 +557,7 @@
 
   /* ---------- real image converter ---------- */
   function extFor(mime) { return { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" }[mime] || "img"; }
-  function convertImage() {
+  function convertImage(onSuccess) {
     var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
     var canvas = document.createElement("canvas");
     canvas.width = currentImage.width; canvas.height = currentImage.height;
@@ -502,16 +567,16 @@
     if (mime === "application/pdf") {
       canvas.toBlob(function (jpg) {
         if (!jpg) { resultBox.textContent = "Couldn't render the PDF in this browser."; return; }
-        jpg.arrayBuffer().then(function (buf) { renderResult(buildImagePdf(new Uint8Array(buf), currentImage.width, currentImage.height), "pdf"); });
+        jpg.arrayBuffer().then(function (buf) { renderResult(buildImagePdf(new Uint8Array(buf), currentImage.width, currentImage.height), "pdf", onSuccess); });
       }, "image/jpeg", quality);
       return;
     }
     canvas.toBlob(function (blob) {
       if (!blob) { resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG."; return; }
-      renderResult(blob, extFor(mime));
+      renderResult(blob, extFor(mime), onSuccess);
     }, mime, quality);
   }
-  function renderResult(blob, ext) {
+  function renderResult(blob, ext, onSuccess) {
     var url = URL.createObjectURL(blob);
     resultBox.innerHTML = "";
     if (ext === "pdf") { var icon = document.createElement("div"); icon.style.fontSize = "2.6rem"; icon.textContent = "📄"; resultBox.appendChild(icon); }
@@ -519,6 +584,7 @@
     var meta = document.createElement("small"); meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
     var dl = document.createElement("a"); dl.href = url; dl.download = currentName + "." + ext; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + ext;
     resultBox.appendChild(meta); resultBox.appendChild(dl);
+    if (typeof onSuccess === "function") onSuccess();
   }
   function buildImagePdf(jpeg, w, h) {
     var enc = new TextEncoder(); var parts = [], pos = 0, offsets = [];
