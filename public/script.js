@@ -250,23 +250,64 @@
 
   /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
   var currentPayPlan = null;
+  function creditRate() { return (window.FM_CONFIG.credits && window.FM_CONFIG.credits.rate) || 0.10; }
+  function currentCreditQty() {
+    var cc = window.FM_CONFIG.credits || {};
+    var v = parseInt(($("creditQty") && $("creditQty").value) || "50", 10) || 50;
+    return Math.max(cc.min || 10, Math.min(cc.max || 5000, v));
+  }
+  function updateCreditPrice() {
+    var qty = currentCreditQty();
+    var price = (qty * creditRate()).toFixed(2);
+    if ($("creditPrice")) $("creditPrice").innerHTML = qty + " credits = <span>$" + price + "</span>";
+    var input = $("creditQty");
+    document.querySelectorAll("#creditQuick button").forEach(function (b) {
+      b.classList.toggle("sel", input && parseInt(b.getAttribute("data-q"), 10) === currentCreditQty());
+    });
+  }
+  function buildCreditPicker() {
+    var presets = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.presets) || [20, 50, 100, 200, 500];
+    var quick = $("creditQuick");
+    if (quick) {
+      quick.innerHTML = "";
+      presets.forEach(function (q) {
+        var b = document.createElement("button");
+        b.type = "button"; b.textContent = q; b.setAttribute("data-q", q);
+        b.addEventListener("click", function () { if ($("creditQty")) $("creditQty").value = q; updateCreditPrice(); });
+        quick.appendChild(b);
+      });
+    }
+    updateCreditPrice();
+  }
+  if ($("creditQty")) $("creditQty").addEventListener("input", updateCreditPrice);
+
   function openPay(plan, price) {
     currentPayPlan = { plan: plan, price: price };
+    var picker = $("creditPicker");
     if (plan === "credits") {
-      var pack = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.pack) || 50;
-      $("payTitle").textContent = "Buy " + pack + " credits";
-      $("paySub").textContent = "$" + price + " one-time · credits never expire";
+      $("payTitle").textContent = "Buy credits";
+      $("paySub").textContent = "Pick an amount — credits never expire (1 credit = 1 conversion).";
+      if (picker) picker.hidden = false;
+      buildCreditPicker();
     } else {
+      if (picker) picker.hidden = true;
       $("payTitle").textContent = "Subscribe to " + plan;
       $("paySub").textContent = "$" + price + "/month · cancel anytime";
     }
     openModal(payModal);
-    if (plan === "credits") renderPayPalOrder(price); else renderPayPal(plan);
+    if (plan === "credits") renderPayPalOrder(); else renderPayPal(plan);
   }
   var payCardBtn = $("payCardBtn");
   if (payCardBtn) payCardBtn.addEventListener("click", function () {
-    if (payModal) closeModal(payModal);
-    if (currentPayPlan) startCardCheckout(currentPayPlan.plan);
+    if (!currentPayPlan) return;
+    if (currentPayPlan.plan === "credits") {
+      if (payModal) closeModal(payModal);
+      showToast("Redirecting to secure checkout…");
+      B.purchase("credits", { credits: currentCreditQty() }).catch(function (e) { showToast(e.message || "Checkout failed"); });
+    } else {
+      if (payModal) closeModal(payModal);
+      startCardCheckout(currentPayPlan.plan);
+    }
   });
 
   var _ppLoading = null;
@@ -353,7 +394,7 @@
         createOrder: function () {
           return fetch("/api/paypal-create-order", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user ? user.id : null })
+            body: JSON.stringify({ userId: user ? user.id : null, credits: currentCreditQty() })
           }).then(function (r) { return r.json(); }).then(function (d) { if (d.id) return d.id; throw new Error(d.error || "order failed"); });
         },
         onApprove: function (data) {

@@ -8,7 +8,7 @@ function json(obj, status = 200) {
 export async function onRequestPost(context) {
   const { request, env } = context;
   try {
-    const { plan, userId, email } = await request.json();
+    const { plan, userId, email, credits } = await request.json();
     const VARIANTS = {
       Pro: env.LEMONSQUEEZY_VARIANT_PRO,
       Team: env.LEMONSQUEEZY_VARIANT_TEAM,
@@ -18,16 +18,23 @@ export async function onRequestPost(context) {
     if (!variantId) return json({ error: "Unknown or unconfigured plan: " + plan }, 400);
 
     const isCredits = plan === "credits";
-    const custom = isCredits
-      ? { user_id: String(userId || ""), type: "credits", credits: String(env.CREDITS_PER_PACK || "50") }
-      : { user_id: String(userId || ""), plan: String(plan) };
+    const checkoutData = {
+      email: email || undefined,
+      custom: isCredits ? { user_id: String(userId || ""), type: "credits" } : { user_id: String(userId || ""), plan: String(plan) }
+    };
+    if (isCredits) {
+      // User chooses the amount; price is computed server-side (credits granted from amount paid).
+      const rate = parseFloat(env.CREDIT_RATE || "0.10");
+      const qty = Math.max(10, Math.min(5000, parseInt(credits || "50", 10) || 50));
+      checkoutData.custom_price = Math.round(qty * rate * 100); // cents
+    }
 
     const origin = new URL(request.url).origin;
     const payload = {
       data: {
         type: "checkouts",
         attributes: {
-          checkout_data: { email: email || undefined, custom: custom },
+          checkout_data: checkoutData,
           product_options: { redirect_url: origin + "/?checkout=success" }
         },
         relationships: {

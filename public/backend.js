@@ -82,11 +82,13 @@
         return { needsVerification: true }; // email confirmation required
       },
       logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; },
-      purchase: async function (plan) {
+      purchase: async function (plan, opts) {
+        var body = { plan: plan, userId: currentUser ? currentUser.id : null, email: currentUser ? currentUser.email : null };
+        if (opts) for (var k in opts) body[k] = opts[k];
         var res = await fetch(cfg.checkoutEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: plan, userId: currentUser ? currentUser.id : null, email: currentUser ? currentUser.email : null })
+          body: JSON.stringify(body)
         });
         var data = await res.json();
         if (data && data.url) { window.location.href = data.url; return { redirect: true }; }

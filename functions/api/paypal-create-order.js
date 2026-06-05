@@ -18,10 +18,12 @@ async function token(env) {
 export async function onRequestPost(context) {
   const { request, env } = context;
   try {
-    const { userId } = await request.json();
+    const { userId, credits } = await request.json();
     if (!userId) return json({ error: "missing user" }, 400);
     if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_CLIENT_SECRET) return json({ error: "PayPal not configured" }, 500);
-    const price = env.CREDITS_PRICE || "5.00";
+    const rate = parseFloat(env.CREDIT_RATE || "0.10");
+    const qty = Math.max(10, Math.min(5000, parseInt(credits || "50", 10) || 50));
+    const price = (qty * rate).toFixed(2);
     const access = await token(env);
     const r = await fetch(base(env) + "/v2/checkout/orders", {
       method: "POST",

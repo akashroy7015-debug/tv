@@ -226,14 +226,14 @@
         </div>
         <div class="price-card">
           <h3>Pay as you go</h3>
-          <p class="price">$5<span>/ 50 credits</span></p>
+          <p class="price">$0.10<span>/ credit</span></p>
           <ul>
             <li>✓ <strong>No subscription</strong></li>
-            <li>✓ 50 conversions (1 credit each)</li>
+            <li>✓ Choose your own amount</li>
+            <li>✓ 1 credit = 1 conversion</li>
             <li>✓ Credits never expire</li>
-            <li>✓ Top up anytime</li>
           </ul>
-          <button class="btn btn-ghost btn-block" data-plan="credits" data-price="5">Buy credits</button>
+          <button class="btn btn-ghost btn-block" data-plan="credits">Buy credits</button>
         </div>
         <div class="price-card featured">
           <span class="badge">Most popular</span>
@@ -343,6 +343,13 @@
       <button class="modal-close" data-close aria-label="Close">×</button>
       <h3 id="payTitle">Subscribe</h3>
       <p class="modal-sub" id="paySub"></p>
+      <div id="creditPicker" hidden>
+        <div class="credit-quick" id="creditQuick"></div>
+        <label class="credit-custom">Amount
+          <input type="number" id="creditQty" min="10" step="10" value="50" inputmode="numeric" />
+        </label>
+        <p class="credit-price" id="creditPrice"></p>
+      </div>
       <button class="btn btn-primary btn-block" id="payCardBtn">💳 Pay with card</button>
       <div class="pay-divider" id="payDivider"><span>or</span></div>
       <div id="paypalButtons"></div>

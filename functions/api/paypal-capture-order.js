@@ -34,13 +34,14 @@ export async function onRequestPost(context) {
     const pu = (d.purchase_units && d.purchase_units[0]) || {};
     const cap = pu.payments && pu.payments.captures && pu.payments.captures[0];
     const amount = cap && cap.amount && cap.amount.value;
-    const expected = env.CREDITS_PRICE || "5.00";
     const target = pu.custom_id || userId; // who gets the credits (server-set at create time)
 
     if (d.status !== "COMPLETED") return json({ ok: false, error: "payment not completed" }, 400);
-    if (parseFloat(amount) !== parseFloat(expected)) return json({ ok: false, error: "amount mismatch" }, 400);
 
-    const n = parseInt(env.CREDITS_PER_PACK || "50", 10);
+    // Grant credits proportional to the amount actually paid.
+    const rate = parseFloat(env.CREDIT_RATE || "0.10");
+    const n = Math.round(parseFloat(amount || "0") / rate);
+    if (!(n > 0)) return json({ ok: false, error: "invalid amount" }, 400);
     if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY && target) {
       const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
       await supabase.rpc("add_credits", { uid: target, n: n });

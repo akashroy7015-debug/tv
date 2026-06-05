@@ -41,9 +41,11 @@ export async function onRequestPost(context) {
   const ACTIVE = ["active", "on_trial"];
   try {
     if (event === "order_created") {
-      // Pay-as-you-go credit pack purchase.
+      // Pay-as-you-go credit purchase — grant credits based on the amount actually paid.
       if (custom.type === "credits") {
-        const n = parseInt(custom.credits || "0", 10);
+        const rate = parseFloat(env.CREDIT_RATE || "0.10");
+        const totalCents = parseInt(attrs.total || "0", 10);
+        const n = Math.round((totalCents / 100) / rate);
         if (n > 0) await supabase.rpc("add_credits", { uid: userId, n: n });
       }
       // (subscription initial orders are handled by subscription_created)
