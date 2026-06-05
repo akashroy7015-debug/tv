@@ -82,13 +82,22 @@
     var u = getUser();
     navAccount.innerHTML = "";
     if (u) {
+      var c = B.credits ? (B.credits() || 0) : 0;
       var chip = document.createElement("span");
       chip.className = "account-chip";
-      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email;
+      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email +
+        (c > 0 ? " · <strong>" + c + "</strong> cr" : "");
+      navAccount.appendChild(chip);
+      if (isPaid()) {
+        var manage = document.createElement("button");
+        manage.className = "btn btn-ghost btn-sm"; manage.textContent = "Manage";
+        manage.addEventListener("click", manageSubscription);
+        navAccount.appendChild(manage);
+      }
       var out = document.createElement("button");
       out.className = "btn btn-ghost btn-sm"; out.textContent = "Log out";
       out.addEventListener("click", function () { B.logout().then(function () { renderAccount(); renderUsage(); showToast("Logged out"); }); });
-      navAccount.appendChild(chip); navAccount.appendChild(out);
+      navAccount.appendChild(out);
     } else {
       var login = document.createElement("button");
       login.className = "btn btn-ghost btn-sm"; login.textContent = "Log in";
@@ -98,6 +107,20 @@
       signup.addEventListener("click", function () { openAuth("signup"); });
       navAccount.appendChild(login); navAccount.appendChild(signup);
     }
+  }
+
+  function manageSubscription() {
+    if (!B.getToken) { showToast("Manage subscription from your email receipt."); return; }
+    showToast("Opening subscription management…");
+    B.getToken().then(function (token) {
+      return fetch("/api/manage-subscription", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token })
+      });
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.url) { window.open(d.url, "_blank", "noopener"); }
+      else { showToast((d && d.error) || "Couldn't open management page."); }
+    }).catch(function (e) { showToast("Error: " + e.message); });
   }
 
   /* ---------- usage meter ---------- */

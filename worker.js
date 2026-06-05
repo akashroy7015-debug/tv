@@ -7,6 +7,7 @@ import { onRequestGet as paypalSetup } from "./functions/api/paypal-setup.js";
 import { onRequestPost as paypalWebhook } from "./functions/api/paypal-webhook.js";
 import { onRequestPost as paypalCreateOrder } from "./functions/api/paypal-create-order.js";
 import { onRequestPost as paypalCaptureOrder } from "./functions/api/paypal-capture-order.js";
+import { onRequestPost as manageSub } from "./functions/api/manage-subscription.js";
 
 export default {
   async fetch(request, env) {
@@ -31,6 +32,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/paypal-capture-order") {
       return paypalCaptureOrder({ request, env });
+    }
+    if (request.method === "POST" && url.pathname === "/api/manage-subscription") {
+      return manageSub({ request, env });
     }
     if (request.method === "GET" && url.pathname === "/api/paypal-setup") {
       return paypalSetup({ request, env });

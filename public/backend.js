@@ -26,7 +26,8 @@
       refresh: function () { return Promise.resolve(); },
       verify: function () { return Promise.resolve(this.isPaid()); },
       credits: function () { return 0; },
-      spendCredit: function () { return Promise.resolve(-1); }
+      spendCredit: function () { return Promise.resolve(-1); },
+      getToken: function () { return Promise.resolve(null); }
     };
   }
 
@@ -108,6 +109,10 @@
         return paid();
       },
       credits: function () { return walletCredits; },
+      getToken: async function () {
+        try { var s = await sb.auth.getSession(); return s.data.session ? s.data.session.access_token : null; }
+        catch (e) { return null; }
+      },
       // Atomically spend 1 credit server-side. Returns new balance, or -1 if none.
       spendCredit: async function () {
         if (!currentUser) return -1;
