@@ -9,19 +9,25 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   try {
     const { plan, userId, email } = await request.json();
-    const VARIANTS = { Pro: env.LEMONSQUEEZY_VARIANT_PRO, Team: env.LEMONSQUEEZY_VARIANT_TEAM };
+    const VARIANTS = {
+      Pro: env.LEMONSQUEEZY_VARIANT_PRO,
+      Team: env.LEMONSQUEEZY_VARIANT_TEAM,
+      credits: env.LEMONSQUEEZY_VARIANT_CREDITS
+    };
     const variantId = VARIANTS[plan];
     if (!variantId) return json({ error: "Unknown or unconfigured plan: " + plan }, 400);
+
+    const isCredits = plan === "credits";
+    const custom = isCredits
+      ? { user_id: String(userId || ""), type: "credits", credits: String(env.CREDITS_PER_PACK || "50") }
+      : { user_id: String(userId || ""), plan: String(plan) };
 
     const origin = new URL(request.url).origin;
     const payload = {
       data: {
         type: "checkouts",
         attributes: {
-          checkout_data: {
-            email: email || undefined,
-            custom: { user_id: String(userId || ""), plan: String(plan) }
-          },
+          checkout_data: { email: email || undefined, custom: custom },
           product_options: { redirect_url: origin + "/?checkout=success" }
         },
         relationships: {

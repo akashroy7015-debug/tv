@@ -420,3 +420,9 @@ input[type=range] { accent-color: var(--accent); height: 6px; }
 .pay-divider::before, .pay-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 #paypalButtons { min-height: 46px; }
 #payCardBtn { margin-bottom: 2px; }
+
+/* ===== Pricing grid: fit 4 plans neatly ===== */
+.pricing-grid { grid-template-columns: repeat(4, 1fr); max-width: 1100px; }
+@media (max-width: 980px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); max-width: 560px; } }
+@media (max-width: 540px) { .pricing-grid { grid-template-columns: 1fr; max-width: 420px; } }
+.price-card .price span { font-size: .8rem; }

@@ -101,10 +101,14 @@
   }
 
   /* ---------- usage meter ---------- */
+  function creditChip() {
+    var c = B.credits ? (B.credits() || 0) : 0;
+    return c > 0 ? " · <strong>" + c + "</strong> credits" : "";
+  }
   function renderUsage() {
     var plan = currentPlan();
     var bar = $("usageBar");
-    if (bar) bar.classList.toggle("paid", plan !== "free");
+    if (bar) bar.classList.toggle("paid", plan !== "free" || creditsLeft() > 0);
     if (unlimited()) {
       usageText.innerHTML = "✨ <strong>Unlimited</strong> conversions · <span class='plan-badge'>" + plan + "</span>";
       upgradeLink.hidden = true;
@@ -114,11 +118,11 @@
     var left = quotaLeft();
     var limit = planLimit();
     if (plan === "free") {
-      usageText.innerHTML = "Free · <strong>" + left + " / " + limit + "</strong> conversions left this month";
-      upgradeLink.textContent = "Upgrade for more →";
-      upgradeLink.hidden = left > 2;
+      usageText.innerHTML = "Free · <strong>" + left + " / " + limit + "</strong> this month" + creditChip();
+      upgradeLink.textContent = creditsLeft() > 0 ? "Top up credits →" : "Upgrade for more →";
+      upgradeLink.hidden = left > 2 && creditsLeft() > 0;
     } else {
-      usageText.innerHTML = "⭐ <span class='plan-badge'>" + plan + "</span> · <strong>" + left + "</strong> of " + limit + " conversions left this month";
+      usageText.innerHTML = "⭐ <span class='plan-badge'>" + plan + "</span> · <strong>" + left + "</strong> of " + limit + " this month" + creditChip();
       upgradeLink.textContent = "Go unlimited with Team →";
       upgradeLink.hidden = left > 25;
     }
@@ -137,7 +141,13 @@
         // Paid users shouldn't see the Free tier anymore — they bought a plan.
         if (p === "free") card.style.display = paid ? "none" : "";
       }
-      if (p === plan) {
+      if (p === "credits") {
+        // Pay-as-you-go is never a "current plan" — it's a top-up.
+        btn.disabled = false;
+        btn.classList.remove("is-current");
+        if (card) { card.classList.remove("current"); card.style.display = ""; }
+        btn.textContent = creditsLeft() > 0 ? "Buy more credits" : "Buy credits";
+      } else if (p === plan) {
         btn.textContent = "✓ Your current plan";
         btn.disabled = true;
         btn.classList.add("is-current");
@@ -182,6 +192,7 @@
 
   // Choose a plan: ensure logged in, then pick a payment method.
   function choosePlan(plan, price) {
+    if (plan === "credits") { buyCredits(); return; }
     if (!getUser()) { pendingPlan = { plan: plan, price: price }; openAuth("login"); return; }
     if (B.demo) {
       planModalPlan = plan;
@@ -202,6 +213,13 @@
       alert("Checkout error:\n\n" + (err.message || "unknown error") +
         "\n\nThis usually means a Lemon Squeezy setting in Cloudflare is missing/incorrect.");
     });
+  }
+
+  // Pay-as-you-go credit pack (one-time purchase via card).
+  function buyCredits() {
+    if (B.demo) { showToast("Credits aren't available in demo mode."); return; }
+    if (!getUser()) { pendingPlan = { plan: "credits" }; openAuth("login"); return; }
+    startCardCheckout("credits");
   }
 
   /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
@@ -372,24 +390,40 @@
   qualityRange.addEventListener("input", function () { qualityVal.textContent = qualityRange.value + "%"; });
 
   /* ---------- gating + convert ---------- */
+  function creditsLeft() { return B.credits ? (B.credits() || 0) : 0; }
+
   convertBtn.addEventListener("click", function () {
     if (!currentFile) return;
     var engine = CATS[currentCat].engine;
-    if (engine === "soon") { comingSoon(); return; } // don't spend a credit on unsupported types
-    if (!unlimited() && quotaLeft() <= 0) {
-      var plan = currentPlan();
-      if (plan === "free") {
-        showToast("You've used your 5 free conversions — pick a plan to keep going.");
-        choosePlan("Pro", planPrice("Pro"));
-      } else {
-        showToast("You've reached your monthly " + plan + " limit. Upgrade to Team for unlimited.");
-        choosePlan("Team", planPrice("Team"));
-      }
+    if (engine === "soon") { comingSoon(); return; } // don't spend anything on unsupported types
+
+    // 1) Unlimited plan → just convert.
+    if (unlimited()) { doConvert(); return; }
+    // 2) Monthly quota (free or Pro) left → convert, count it locally.
+    if (quotaLeft() > 0) { doConvert(); bumpUsed(); renderUsage(); return; }
+    // 3) Pay-as-you-go credits → spend one server-side, then convert.
+    if (creditsLeft() > 0) {
+      convertBtn.disabled = true;
+      B.spendCredit().then(function (bal) {
+        convertBtn.disabled = false;
+        if (bal >= 0) { doConvert(); renderUsage(); }
+        else { outOfConversions(); }
+      });
       return;
     }
-    doConvert();
-    if (!unlimited()) { bumpUsed(); renderUsage(); }
+    // 4) Nothing left → offer credits or a plan.
+    outOfConversions();
   });
+
+  function outOfConversions() {
+    var plan = currentPlan();
+    if (plan === "Pro") {
+      showToast("Monthly Pro limit reached — go unlimited with Team, or buy credits.");
+    } else {
+      showToast("You're out of conversions — buy credits or pick a plan.");
+    }
+    document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
+  }
   function doConvert() {
     var engine = CATS[currentCat].engine;
     if (engine === "image" && currentImage) convertImage();
@@ -511,19 +545,22 @@
   function handleReturn() {
     if (location.search.indexOf("checkout=success") !== -1) {
       history.replaceState({}, "", location.pathname + location.hash);
-      showToast("Finalizing your subscription…");
+      showToast("Finalizing your payment…");
       $("convert").scrollIntoView({ behavior: "smooth" });
+      var startCredits = creditsLeft();
       var tries = 0;
       (function poll() {
-        B.verify().then(function () {
+        Promise.all([B.verify(), B.refresh ? B.refresh() : Promise.resolve()]).then(function () {
           renderAccount(); renderUsage();
           if (isPaid()) {
             var plan = currentPlan();
             showToast(unlimited()
               ? "🎉 You're on " + plan + " — unlimited conversions unlocked!"
               : "🎉 You're on " + plan + " — " + planLimit() + " conversions/month unlocked!");
+          } else if (creditsLeft() > startCredits) {
+            showToast("✓ Credits added — you now have " + creditsLeft() + " credits!");
           } else if (tries < 8) { tries++; setTimeout(poll, 2500); }
-          else { showToast("Payment received — if your plan doesn't show in a minute, refresh the page."); }
+          else { showToast("Payment received — if it doesn't show in a minute, refresh the page."); }
         });
       })();
     } else if (location.search.indexOf("checkout=cancel") !== -1) {

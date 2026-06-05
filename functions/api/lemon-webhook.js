@@ -40,9 +40,16 @@ export async function onRequestPost(context) {
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
   const ACTIVE = ["active", "on_trial"];
   try {
-    if (event === "subscription_created" || event === "subscription_updated" || event === "subscription_resumed" || event === "subscription_unpaused" || event === "order_created") {
+    if (event === "order_created") {
+      // Pay-as-you-go credit pack purchase.
+      if (custom.type === "credits") {
+        const n = parseInt(custom.credits || "0", 10);
+        if (n > 0) await supabase.rpc("add_credits", { uid: userId, n: n });
+      }
+      // (subscription initial orders are handled by subscription_created)
+    } else if (event === "subscription_created" || event === "subscription_updated" || event === "subscription_resumed" || event === "subscription_unpaused") {
       const status = attrs.status;
-      const active = event === "order_created" ? true : ACTIVE.indexOf(status) !== -1;
+      const active = ACTIVE.indexOf(status) !== -1;
       await supabase.from("subscriptions").upsert(
         { user_id: userId, plan, status: active ? "active" : "canceled", provider: "lemonsqueezy", subscription_id: String(subId), updated_at: new Date().toISOString() },
         { onConflict: "user_id" }

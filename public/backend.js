@@ -24,20 +24,22 @@
       purchase: function (plan) { var u = get() || {}; u.plan = plan; set(u); return Promise.resolve({ done: true }); },
       applyPlan: function (plan) { var u = get() || {}; u.plan = plan; set(u); },
       refresh: function () { return Promise.resolve(); },
-      verify: function () { return Promise.resolve(this.isPaid()); }
+      verify: function () { return Promise.resolve(this.isPaid()); },
+      credits: function () { return 0; },
+      spendCredit: function () { return Promise.resolve(-1); }
     };
   }
 
   /* ---------- LIVE backend (Supabase + Stripe) ---------- */
   function LiveBackend() {
-    var sb = null, currentUser = null, sub = null;
+    var sb = null, currentUser = null, sub = null, walletCredits = 0;
     function paid() { return !!(sub && (sub.status === "active" || sub.status === "trialing")); }
     var ready = (async function () {
       var mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
       sb = mod.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       var s = await sb.auth.getSession();
       currentUser = s.data.session ? s.data.session.user : null;
-      if (currentUser) await loadSub();
+      if (currentUser) { await loadSub(); await loadWallet(); }
       sb.auth.onAuthStateChange(function (_e, session) { currentUser = session ? session.user : null; });
     })();
     async function loadSub() {
@@ -46,6 +48,13 @@
         var r = await sb.from("subscriptions").select("plan,status").eq("user_id", currentUser.id).maybeSingle();
         sub = r.data || null;
       } catch (e) { sub = null; }
+    }
+    async function loadWallet() {
+      if (!currentUser) { walletCredits = 0; return; }
+      try {
+        var r = await sb.from("wallets").select("credits").eq("user_id", currentUser.id).maybeSingle();
+        walletCredits = r.data ? (r.data.credits || 0) : 0;
+      } catch (e) { walletCredits = 0; }
     }
     return {
       live: true,
@@ -98,7 +107,19 @@
         await loadSub();
         return paid();
       },
-      refresh: loadSub
+      credits: function () { return walletCredits; },
+      // Atomically spend 1 credit server-side. Returns new balance, or -1 if none.
+      spendCredit: async function () {
+        if (!currentUser) return -1;
+        try {
+          var r = await sb.rpc("spend_credit");
+          if (r.error) return -1;
+          var bal = typeof r.data === "number" ? r.data : -1;
+          if (bal >= 0) walletCredits = bal;
+          return bal;
+        } catch (e) { return -1; }
+      },
+      refresh: async function () { await loadSub(); await loadWallet(); }
     };
   }
 
