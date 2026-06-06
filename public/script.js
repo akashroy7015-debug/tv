@@ -752,8 +752,15 @@
     var type = (file.type || "").toLowerCase();
     if (type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1 || /\.(heic|heif)$/.test(name)) {
       return loadLib("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js", "heic2any")
-        .then(function () { return window.heic2any({ blob: file, toType: "image/png" }); })
-        .then(function (png) { return blobToCanvas(png); });
+        .then(function () {
+          if (!window.heic2any) throw new Error("HEIC decoder didn't load — check your connection and retry.");
+          return window.heic2any({ blob: file, toType: "image/png" });
+        })
+        .then(function (out) {
+          var blob = Array.isArray(out) ? out[0] : out; // multi-image HEIC → first frame
+          return blobToCanvas(blob);
+        })
+        .catch(function (e) { throw new Error("Couldn't read this HEIC file (" + (e && e.message ? e.message : "decode error") + ")."); });
     }
     if (type.indexOf("tiff") !== -1 || /\.(tif|tiff)$/.test(name)) {
       return loadLib("https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js", "UTIF")
