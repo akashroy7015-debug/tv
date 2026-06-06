@@ -1,0 +1,15 @@
+# Render Blueprint — one-click deploy of the FileMorph conversion server.
+# In Render: New → Blueprint → pick this repo. It builds server/Dockerfile.
+services:
+  - type: web
+    name: filemorph-convert
+    runtime: docker
+    rootDir: server
+    plan: starter            # LibreOffice needs ~512MB+ RAM; free tier may be too small
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: ALLOW_ORIGIN
+        value: https://filemorph.shop
+      - key: CONVERT_TOKEN
+        generateValue: true   # Render generates a random token; copy it into config.js (convertToken)
