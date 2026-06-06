@@ -34,20 +34,24 @@
 
   /* ---------- category config ---------- */
   var CATS = {
-    image: { accept: "image/*", engine: "image", hint: "PNG · JPG · WebP · PDF — converted locally, no upload",
-      formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"]], note: "" },
-    audio: { accept: "audio/*", engine: "ffmpeg", hint: "MP3 · WAV · AAC · M4A · OGG — converted in your browser",
-      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["m4a", "M4A"], ["ogg", "OGG"]],
+    image: { accept: "image/*,.heic,.heif,.tif,.tiff,.svg", engine: "image", hint: "HEIC · TIFF · SVG · PNG · JPG · WebP → PNG / JPG / WebP / PDF / ICO",
+      formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"], ["ico", "ICO"]],
+      note: "Converted privately in your browser — supports HEIC, TIFF, SVG and more." },
+    sheet: { accept: ".xlsx,.xls,.csv,.ods", engine: "sheet", hint: "XLSX · XLS · ODS · CSV — converted in your browser",
+      formats: [["csv", "CSV"], ["xlsx", "XLSX"]],
+      note: "Spreadsheets convert privately in your browser — nothing is uploaded." },
+    audio: { accept: "audio/*", engine: "ffmpeg", hint: "MP3 · WAV · AAC · M4A · OGG · FLAC — converted in your browser",
+      formats: [["mp3", "MP3"], ["wav", "WAV"], ["aac", "AAC"], ["m4a", "M4A"], ["ogg", "OGG"], ["flac", "FLAC"]],
       note: "Converted privately in your browser — nothing is uploaded." },
-    video: { accept: "video/*", engine: "ffmpeg", hint: "MP4 · WebM · MOV · GIF — converted in your browser",
-      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"]],
+    video: { accept: "video/*", engine: "ffmpeg", hint: "MP4 · WebM · MOV · MKV · GIF — converted in your browser",
+      formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"], ["mkv", "MKV"]],
       note: "Converted privately in your browser. Large videos may take a while." },
-    document: { accept: ".pdf,.docx,.doc,.txt,.odt,.epub,.rtf", engine: "soon", hint: "Document conversion is coming soon",
-      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["txt", "TXT"]],
-      note: "Document conversion is coming soon. Image, PDF, audio & video work today." },
-    email: { accept: ".eml,.msg,.mbox,.pst", engine: "soon", hint: "Email conversion is coming soon",
+    document: { accept: ".pdf,.docx,.doc,.odt,.epub,.rtf", engine: "soon", hint: "DOCX · PDF · EPUB — coming soon",
+      formats: [["pdf", "PDF"], ["docx", "DOCX"]],
+      note: "Word/PDF/EPUB conversion is coming soon. Image, spreadsheet, audio & video work today." },
+    email: { accept: ".eml,.msg,.mbox,.pst", engine: "soon", hint: "EML · MSG · MBOX — coming soon",
       formats: [["pdf", "PDF"], ["html", "HTML"]],
-      note: "Email conversion is coming soon. Image, PDF, audio & video work today." }
+      note: "Email conversion is coming soon. Image, spreadsheet, audio & video work today." }
   };
   var currentCat = "image";
 
@@ -506,7 +510,9 @@
     if (!file) return;
     currentFile = file; currentName = (file.name || "file").replace(/\.[^.]+$/, "");
     convertBtn.disabled = false; previewWrap.hidden = false; resultBox.textContent = "Ready — hit Convert.";
-    if (file.type.indexOf("image/") === 0) {
+    var nm = (file.name || "").toLowerCase();
+    var previewable = /^image\/(png|jpeg|jpg|webp|gif|bmp|svg\+xml)$/.test(file.type) || /\.(png|jpe?g|webp|gif|bmp|svg)$/.test(nm);
+    if (previewable) {
       var reader = new FileReader();
       reader.onload = function (e) {
         var img = new Image();
@@ -564,9 +570,23 @@
   }
   function doConvert(onSuccess) {
     var engine = CATS[currentCat].engine;
-    if (engine === "image" && currentImage) convertImage(onSuccess);
+    if (engine === "image") convertImage(onSuccess);
+    else if (engine === "sheet") convertSheet(onSuccess);
     else if (engine === "ffmpeg") ffmpegConvert(onSuccess);
     else comingSoon();
+  }
+  /* ---------- lazy script loader (for HEIC/TIFF/spreadsheet libraries) ---------- */
+  var _libs = {};
+  function loadLib(url, globalName) {
+    if (window[globalName]) return Promise.resolve(window[globalName]);
+    if (_libs[url]) return _libs[url];
+    _libs[url] = new Promise(function (res, rej) {
+      var s = document.createElement("script"); s.src = url;
+      s.onload = function () { res(window[globalName]); };
+      s.onerror = function () { rej(new Error("Couldn't load a required library.")); };
+      document.head.appendChild(s);
+    });
+    return _libs[url];
   }
   function comingSoon() {
     resultBox.innerHTML = "";
@@ -629,32 +649,115 @@
     });
   }
 
-  /* ---------- real image converter ---------- */
-  function extFor(mime) { return { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" }[mime] || "img"; }
+  /* ---------- image converter (HEIC/TIFF/SVG/PNG/JPG/WebP → PNG/JPG/WebP/PDF/ICO) ---------- */
+  function extFor(mime) { return { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf", "ico": "ico" }[mime] || "img"; }
+
+  // Decode any supported source file into a <canvas>.
+  function getSourceCanvas(file) {
+    var name = (file.name || "").toLowerCase();
+    var type = (file.type || "").toLowerCase();
+    if (type.indexOf("heic") !== -1 || type.indexOf("heif") !== -1 || /\.(heic|heif)$/.test(name)) {
+      return loadLib("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js", "heic2any")
+        .then(function () { return window.heic2any({ blob: file, toType: "image/png" }); })
+        .then(function (png) { return blobToCanvas(png); });
+    }
+    if (type.indexOf("tiff") !== -1 || /\.(tif|tiff)$/.test(name)) {
+      return loadLib("https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js", "UTIF")
+        .then(function () { return file.arrayBuffer(); })
+        .then(function (buf) {
+          var U = window.UTIF, ifds = U.decode(buf);
+          U.decodeImage(buf, ifds[0]);
+          var rgba = U.toRGBA8(ifds[0]);
+          var c = document.createElement("canvas"); c.width = ifds[0].width; c.height = ifds[0].height;
+          var ctx = c.getContext("2d"); var id = ctx.createImageData(c.width, c.height);
+          id.data.set(rgba); ctx.putImageData(id, 0, 0); return c;
+        });
+    }
+    return blobToCanvas(file); // png/jpg/webp/gif/bmp/svg
+  }
+  function blobToCanvas(blob) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(blob); var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth || img.width || 512, h = img.naturalHeight || img.height || 512;
+        var c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url); res(c);
+      };
+      img.onerror = function () { rej(new Error("Couldn't read that image format.")); };
+      img.src = url;
+    });
+  }
+  function buildIco(pngBytes, w, h) {
+    var head = new Uint8Array(22); var dv = new DataView(head.buffer);
+    dv.setUint16(0, 0, true); dv.setUint16(2, 1, true); dv.setUint16(4, 1, true);
+    head[6] = w >= 256 ? 0 : w; head[7] = h >= 256 ? 0 : h;
+    dv.setUint16(10, 1, true); dv.setUint16(12, 32, true);
+    dv.setUint32(14, pngBytes.length, true); dv.setUint32(18, 22, true);
+    var out = new Uint8Array(22 + pngBytes.length); out.set(head, 0); out.set(pngBytes, 22);
+    return new Blob([out], { type: "image/x-icon" });
+  }
   function convertImage(onSuccess) {
     var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
-    var canvas = document.createElement("canvas");
-    canvas.width = currentImage.width; canvas.height = currentImage.height;
-    var ctx = canvas.getContext("2d");
-    if (mime === "image/jpeg" || mime === "application/pdf") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    ctx.drawImage(currentImage, 0, 0);
-    if (mime === "application/pdf") {
-      canvas.toBlob(function (jpg) {
-        if (!jpg) { resultBox.textContent = "Couldn't render the PDF in this browser."; return; }
-        jpg.arrayBuffer().then(function (buf) { renderResult(buildImagePdf(new Uint8Array(buf), currentImage.width, currentImage.height), "pdf", onSuccess); });
-      }, "image/jpeg", quality);
-      return;
-    }
-    canvas.toBlob(function (blob) {
-      if (!blob) { resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG."; return; }
-      renderResult(blob, extFor(mime), onSuccess);
-    }, mime, quality);
+    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting…</small>";
+    getSourceCanvas(currentFile).then(function (src) {
+      // ICO: cap to 256, output PNG-in-ICO
+      if (mime === "ico") {
+        var size = Math.min(256, Math.max(src.width, src.height));
+        var ic = document.createElement("canvas"); ic.width = size; ic.height = size;
+        ic.getContext("2d").drawImage(src, 0, 0, size, size);
+        ic.toBlob(function (png) {
+          png.arrayBuffer().then(function (buf) { renderResult(buildIco(new Uint8Array(buf), size, size), "ico", onSuccess); });
+        }, "image/png");
+        return;
+      }
+      var c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+      var ctx = c.getContext("2d");
+      if (mime === "image/jpeg" || mime === "application/pdf") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); }
+      ctx.drawImage(src, 0, 0);
+      if (mime === "application/pdf") {
+        c.toBlob(function (jpg) {
+          if (!jpg) { resultBox.textContent = "Couldn't render the PDF."; return; }
+          jpg.arrayBuffer().then(function (buf) { renderResult(buildImagePdf(new Uint8Array(buf), c.width, c.height), "pdf", onSuccess); });
+        }, "image/jpeg", quality);
+        return;
+      }
+      c.toBlob(function (blob) {
+        if (!blob) { resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG."; return; }
+        renderResult(blob, extFor(mime), onSuccess);
+      }, mime, quality);
+    }).catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+  }
+
+  /* ---------- spreadsheet converter (XLSX/XLS/ODS/CSV ⇄ CSV/XLSX, in-browser) ---------- */
+  function convertSheet(onSuccess) {
+    var fmt = formatSelect.value;
+    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting spreadsheet…</small>";
+    loadLib("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js", "XLSX").then(function () {
+      return currentFile.arrayBuffer();
+    }).then(function (buf) {
+      var XLSX = window.XLSX;
+      var wb = XLSX.read(buf, { type: "array" });
+      var blob;
+      if (fmt === "csv") {
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var csv = XLSX.utils.sheet_to_csv(ws);
+        blob = new Blob([csv], { type: "text/csv" });
+      } else {
+        var out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      }
+      renderResult(blob, fmt, onSuccess);
+    }).catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
   }
   function renderResult(blob, ext, onSuccess) {
     var url = URL.createObjectURL(blob);
     resultBox.innerHTML = "";
-    if (ext === "pdf") { var icon = document.createElement("div"); icon.style.fontSize = "2.6rem"; icon.textContent = "📄"; resultBox.appendChild(icon); }
-    else { var out = new Image(); out.src = url; resultBox.appendChild(out); }
+    var isImg = ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp";
+    if (isImg) { var out = new Image(); out.src = url; resultBox.appendChild(out); }
+    else {
+      var glyph = { pdf: "📄", ico: "🟦", csv: "📑", xlsx: "📊" }[ext] || "📁";
+      var icon = document.createElement("div"); icon.style.fontSize = "2.6rem"; icon.textContent = glyph; resultBox.appendChild(icon);
+    }
     var meta = document.createElement("small"); meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
     var dl = document.createElement("a"); dl.href = url; dl.download = currentName + "." + ext; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + ext;
     resultBox.appendChild(meta); resultBox.appendChild(dl);
