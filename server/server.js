@@ -57,11 +57,16 @@ app.post("/convert", upload.single("file"), (req, res) => {
   // 3) Images (incl. HEIC) when both sides are image formats
   if (IMG.indexOf(fmt) !== -1 && IMG.indexOf(inExt) !== -1) {
     if (inExt === "heic" || inExt === "heif") {
-      const mid = path.join(work, "mid.png");
-      return run("heif-convert", [inPath, mid], (err, se) => {
-        if (err) return fail("HEIC decode failed: " + (se || err.message));
-        if (fmt === "png") return send(mid, "converted.png");
-        run("convert", [mid, outPath], (e2, s2) => e2 ? fail("conversion failed: " + (s2 || e2.message)) : send(outPath, "converted." + fmt));
+      // pillow-heif (bundled recent libheif) decodes straight to the target format,
+      // handling iPhone files the system heif-convert rejects.
+      return run("python3", ["/app/heic_convert.py", inPath, outPath], (err, se) => {
+        if (!err) return send(outPath, "converted." + fmt);
+        const mid = path.join(work, "mid.png");
+        run("heif-convert", [inPath, mid], (e2, s2) => {
+          if (e2) return fail("HEIC decode failed: " + (se || s2 || err.message));
+          if (fmt === "png") return send(mid, "converted.png");
+          run("convert", [mid, outPath], (e3, s3) => e3 ? fail("conversion failed: " + (s3 || e3.message)) : send(outPath, "converted." + fmt));
+        });
       });
     }
     return run("convert", [inPath, outPath], (err, se) =>
