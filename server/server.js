@@ -1,7 +1,7 @@
-// FileMorph conversion server.
-// POST /convert  (multipart: file, format)  -> returns the converted file.
-// Documents via LibreOffice; email (eml/msg/mbox) via convert.py.
-// Optional: set CONVERT_TOKEN to require header "x-convert-token".
+// FileMorph universal conversion server.
+// POST /convert (multipart: file, format) -> converted file.
+// Routes by type: images (ImageMagick/heif), audio+video (ffmpeg),
+// documents (LibreOffice), email (convert.py). Optional CONVERT_TOKEN.
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
@@ -12,10 +12,13 @@ const path = require("path");
 
 const app = express();
 app.use(cors({ origin: process.env.ALLOW_ORIGIN || "*" }));
-const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 50 * 1024 * 1024 } });
+const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 200 * 1024 * 1024 } });
 const TOKEN = process.env.CONVERT_TOKEN || "";
 
-app.get("/", (_req, res) => res.send("FileMorph convert server: OK"));
+const IMG = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff", "tif", "ico", "heic", "heif", "svg"];
+const AV = ["mp3", "wav", "aac", "m4a", "ogg", "flac", "opus", "aiff", "mp4", "webm", "mov", "mkv", "avi", "m4v", "gif"];
+
+app.get("/", (_req, res) => res.send("FileMorph universal convert server: OK"));
 
 app.post("/convert", upload.single("file"), (req, res) => {
   if (TOKEN && req.headers["x-convert-token"] !== TOKEN) return res.status(401).json({ error: "unauthorized" });
@@ -25,8 +28,7 @@ app.post("/convert", upload.single("file"), (req, res) => {
 
   const inExt = (f.originalname.split(".").pop() || "").toLowerCase();
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "fm-"));
-  const safe = (f.originalname || ("in." + inExt)).replace(/[^\w.\-]/g, "_");
-  const inPath = path.join(work, safe);
+  const inPath = path.join(work, (f.originalname || ("in." + inExt)).replace(/[^\w.\-]/g, "_"));
   fs.renameSync(f.path, inPath);
 
   const cleanup = () => { try { fs.rmSync(work, { recursive: true, force: true }); } catch (e) {} };
@@ -35,26 +37,45 @@ app.post("/convert", upload.single("file"), (req, res) => {
     if (!fs.existsSync(outPath)) return fail("output not produced");
     res.download(outPath, name, () => cleanup());
   };
+  const run = (cmd, args, next) => execFile(cmd, args, { timeout: 240000 }, (err, _o, se) => next(err, se));
 
-  const emailIn = ["eml", "msg", "mbox"].indexOf(inExt) !== -1;
-  if (emailIn) {
-    const outExt = fmt === "pdf" ? "pdf" : "html";
-    const outPath = path.join(work, "out." + outExt);
-    execFile("python3", ["/app/convert.py", inPath, fmt, outPath], { timeout: 120000 }, (err, _so, se) => {
-      if (err) return fail("email conversion failed: " + (se || err.message));
-      send(outPath, "converted." + outExt);
-    });
-    return;
+  const outPath = path.join(work, "out." + fmt);
+
+  // 1) Email
+  if (["eml", "msg", "mbox"].indexOf(inExt) !== -1) {
+    const oe = fmt === "pdf" ? "pdf" : "html";
+    return run("python3", ["/app/convert.py", inPath, fmt, path.join(work, "out." + oe)], (err, se) =>
+      err ? fail("email conversion failed: " + (se || err.message)) : send(path.join(work, "out." + oe), "converted." + oe));
   }
 
-  // Office documents / PDF via LibreOffice.
+  // 2) Audio / video (ffmpeg) — when the target is an A/V format
+  if (AV.indexOf(fmt) !== -1) {
+    return run("ffmpeg", ["-y", "-i", inPath, outPath], (err, se) =>
+      err ? fail("media conversion failed: " + (se || err.message)) : send(outPath, "converted." + fmt));
+  }
+
+  // 3) Images (incl. HEIC) when both sides are image formats
+  if (IMG.indexOf(fmt) !== -1 && IMG.indexOf(inExt) !== -1) {
+    if (inExt === "heic" || inExt === "heif") {
+      const mid = path.join(work, "mid.png");
+      return run("heif-convert", [inPath, mid], (err, se) => {
+        if (err) return fail("HEIC decode failed: " + (se || err.message));
+        if (fmt === "png") return send(mid, "converted.png");
+        run("convert", [mid, outPath], (e2, s2) => e2 ? fail("conversion failed: " + (s2 || e2.message)) : send(outPath, "converted." + fmt));
+      });
+    }
+    return run("convert", [inPath, outPath], (err, se) =>
+      err ? fail("image conversion failed: " + (se || err.message)) : send(outPath, "converted." + fmt));
+  }
+
+  // 4) Documents / everything else (LibreOffice)
   const args = ["--headless", "--convert-to", fmt, "--outdir", work, inPath];
   if (inExt === "pdf" && fmt === "docx") args.splice(1, 0, "--infilter=writer_pdf_import");
-  execFile("soffice", args, { timeout: 180000 }, (err, _so, se) => {
+  execFile("soffice", args, { timeout: 240000 }, (err, _o, se) => {
     if (err) return fail("conversion failed: " + (se || err.message));
     const base = path.basename(inPath).replace(/\.[^.]+$/, "");
     send(path.join(work, base + "." + fmt), "converted." + fmt);
   });
 });
 
-app.listen(process.env.PORT || 8080, () => console.log("convert server up"));
+app.listen(process.env.PORT || 8080, () => console.log("universal convert server up"));

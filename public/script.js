@@ -691,7 +691,7 @@
   /* ---------- server conversion (heavy office/email formats) ---------- */
   function serverConvertFile(onSuccess) {
     var cfg = window.FM_CONFIG;
-    var fmt = formatSelect.value;
+    var fmt = fmtExt();
     if (!cfg.convertServer) {
       resultBox.innerHTML = "";
       var icon = document.createElement("div"); icon.style.fontSize = "2.2rem"; icon.textContent = "🛠️";
@@ -714,6 +714,22 @@
       })
       .then(function (blob) { renderResult(blob, fmt, onSuccess); })
       .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+  }
+
+  // Normalize the selected output format to a file extension (image mimes → ext).
+  function fmtExt() {
+    var v = formatSelect.value;
+    return ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "application/pdf": "pdf" })[v] || v;
+  }
+  // If a browser conversion fails and a server is configured, retry there automatically.
+  function browserFail(e, onSuccess) {
+    var msg = (e && e.message) ? e.message : String(e);
+    if (window.FM_CONFIG.convertServer) {
+      showProgress("Couldn't do it in your browser — trying our server…", false);
+      serverConvertFile(onSuccess);
+    } else {
+      resultBox.textContent = "Conversion failed: " + msg;
+    }
   }
 
   /* ---------- in-browser audio/video converter (ffmpeg.wasm — our own, no upload) ---------- */
@@ -760,7 +776,7 @@
           if (typeof onSuccess === "function") onSuccess();
         });
     }).catch(function (e) {
-      resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e) + ". Try a smaller file or a different format.";
+      browserFail(e, onSuccess);
     });
   }
 
@@ -851,7 +867,7 @@
         if (!blob) { resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG."; return; }
         renderResult(blob, extFor(mime), onSuccess);
       }, mime, quality);
-    }).catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+    }).catch(function (e) { browserFail(e, onSuccess); });
   }
 
   /* ---------- spreadsheet converter (XLSX/XLS/ODS/CSV ⇄ CSV/XLSX, in-browser) ---------- */
@@ -873,7 +889,7 @@
         blob = new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       }
       renderResult(blob, fmt, onSuccess);
-    }).catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+    }).catch(function (e) { browserFail(e, onSuccess); });
   }
   function renderResult(blob, ext, onSuccess) {
     var url = URL.createObjectURL(blob);
