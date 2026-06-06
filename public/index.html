@@ -38,7 +38,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5490907338841593" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
 </head>
 <body>
   <!-- ===== Header ===== -->
@@ -69,15 +69,15 @@
       <div class="hero-copy">
         <span class="eyebrow">No install · Runs in your browser</span>
         <h1>Free Online File Converter<br /><span class="accent">for Images, Documents, Video &amp; Audio</span></h1>
-        <p class="lede">
+        <p class="lede" id="heroLede">
           Convert <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more — directly in your browser.
           Private, fast, and free to start. Image &amp; PDF conversions never leave your device.
         </p>
         <div class="hero-actions">
-          <a href="#convert" class="btn btn-primary">Start converting free</a>
-          <a href="#plans" class="btn btn-ghost">See plans</a>
+          <a href="#convert" class="btn btn-primary" id="heroCta">Start converting free</a>
+          <a href="#plans" class="btn btn-ghost" id="heroCta2">See plans</a>
         </div>
-        <ul class="hero-trust">
+        <ul class="hero-trust" id="heroTrust">
           <li>✓ First conversions free</li>
           <li>✓ No software to install</li>
           <li>✓ Private in-browser images</li>
@@ -188,8 +188,33 @@
     </div>
   </section>
 
+  <!-- ===== Comparison ===== -->
+  <section class="section" id="compare">
+    <div class="container">
+      <div class="section-head">
+        <h2>How FileMorph compares</h2>
+        <p>Most online converters upload everything, bury you in ads, and watermark the result. We don't.</p>
+      </div>
+      <div class="compare-wrap">
+        <table class="compare">
+          <thead>
+            <tr><th>&nbsp;</th><th class="us">FileMorph</th><th>Typical converters</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Private in-browser image &amp; PDF</td><td class="us">✓ Never uploaded</td><td>✕ Uploaded to a server</td></tr>
+            <tr><td>No watermark on your files</td><td class="us">✓ Clean output</td><td>✕ Often watermarked</td></tr>
+            <tr><td>All formats in one place</td><td class="us">✓ Image · Doc · A/V · Email</td><td>✕ Different site each time</td></tr>
+            <tr><td>No install, works on phone</td><td class="us">✓ Any browser</td><td>~ Sometimes</td></tr>
+            <tr><td>Pay only for what you use</td><td class="us">✓ Credits, never expire</td><td>✕ Forced subscription</td></tr>
+            <tr><td>Honest free tier</td><td class="us">✓ Free to start</td><td>~ Limited / nagging</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Formats ===== -->
-  <section class="section" id="formats">
+  <section class="section section-alt" id="formats">
     <div class="container">
       <div class="section-head">
         <h2>Popular conversions</h2>
@@ -278,9 +303,9 @@
   <!-- ===== CTA ===== -->
   <section class="cta">
     <div class="container">
-      <h2>Convert your first file in seconds.</h2>
-      <p>No download, no account to start — just drop a file and go.</p>
-      <a href="#convert" class="btn btn-primary btn-lg">Start converting free</a>
+      <h2 id="ctaTitle">Convert your first file in seconds.</h2>
+      <p id="ctaText">No download, no account to start — just drop a file and go.</p>
+      <a href="#convert" class="btn btn-primary btn-lg" id="ctaBtn">Start converting free</a>
     </div>
   </section>
 
@@ -361,8 +386,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="config.js?v=7"></script>
-  <script src="backend.js?v=7"></script>
-  <script src="script.js?v=7"></script>
+  <script src="config.js?v=8"></script>
+  <script src="backend.js?v=8"></script>
+  <script src="script.js?v=8"></script>
 </body>
 </html>

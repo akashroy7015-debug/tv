@@ -83,15 +83,44 @@
     toastTimer = setTimeout(function () { toast.classList.remove("show"); setTimeout(function () { toast.hidden = true; }, 300); }, 3000);
   }
 
+  /* ---------- swap "free" marketing copy for paid members ---------- */
+  function setText(id, txt) { var el = $(id); if (el) el.textContent = txt; }
+  function applyMemberCopy(paid) {
+    if (paid) {
+      var lede = $("heroLede");
+      if (lede) lede.innerHTML = "Convert <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more — directly in your browser. "
+        + "Private, fast, and unlimited on your plan. Image &amp; PDF conversions never leave your device.";
+      setText("heroCta", "Open the converter");
+      var trust = $("heroTrust");
+      if (trust) trust.innerHTML = "<li>👑 Premium member</li><li>✓ Every format unlocked</li><li>✓ Priority processing</li>";
+      setText("ctaTitle", "Welcome back — let's convert.");
+      setText("ctaText", "Your premium tools are ready. Drop a file and go.");
+      setText("ctaBtn", "Open the converter");
+    } else {
+      var lede0 = $("heroLede");
+      if (lede0) lede0.innerHTML = "Convert <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more — directly in your browser. "
+        + "Private, fast, and free to start. Image &amp; PDF conversions never leave your device.";
+      setText("heroCta", "Start converting free");
+      var trust0 = $("heroTrust");
+      if (trust0) trust0.innerHTML = "<li>✓ First conversions free</li><li>✓ No software to install</li><li>✓ Private in-browser images</li>";
+      setText("ctaTitle", "Convert your first file in seconds.");
+      setText("ctaText", "No download, no account to start — just drop a file and go.");
+      setText("ctaBtn", "Start converting free");
+    }
+  }
+
   /* ---------- account UI ---------- */
   function renderAccount() {
     var u = getUser();
+    applyMemberCopy(isPaid());
     navAccount.innerHTML = "";
     if (u) {
       var c = B.credits ? (B.credits() || 0) : 0;
+      var paidNow = isPaid();
       var chip = document.createElement("span");
-      chip.className = "account-chip";
-      chip.innerHTML = "<strong>" + (u.plan && u.plan !== "free" ? u.plan : "Free") + "</strong> · " + u.email;
+      chip.className = "account-chip" + (paidNow ? " premium" : "");
+      chip.innerHTML = (paidNow ? "<span class='crown'>👑</span> " : "")
+        + "<strong>" + (paidNow ? u.plan : "Free") + "</strong> · " + u.email;
       navAccount.appendChild(chip);
       var credChip = document.createElement("span");
       credChip.className = "account-chip credits-chip"; credChip.title = "Conversion credits";
@@ -139,10 +168,15 @@
   }
   function renderUsage() {
     var plan = currentPlan();
+    var paidNow = plan !== "free";
     var bar = $("usageBar");
-    if (bar) bar.classList.toggle("paid", plan !== "free" || creditsLeft() > 0);
+    if (bar) {
+      bar.classList.toggle("paid", paidNow || creditsLeft() > 0);
+      bar.classList.toggle("premium", paidNow); // gold treatment for members
+    }
     if (unlimited()) {
-      usageText.innerHTML = "✨ <strong>Unlimited</strong> conversions · <span class='plan-badge'>" + plan + "</span>";
+      usageText.innerHTML = "<span class='pill-gold'>" + plan + "</span> <span class='verified'>✦</span> "
+        + "<strong>Unlimited</strong> premium conversions — every format unlocked";
       upgradeLink.hidden = true;
       renderPlans();
       return;
@@ -154,7 +188,9 @@
       upgradeLink.textContent = creditsLeft() > 0 ? "Top up credits →" : "Upgrade for more →";
       upgradeLink.hidden = left > 2 && creditsLeft() > 0;
     } else {
-      usageText.innerHTML = "⭐ <span class='plan-badge'>" + plan + "</span> · <strong>" + left + "</strong> of " + limit + " this month" + creditChip();
+      // Paid member (e.g. Pro) — premium wording, no "free" framing.
+      usageText.innerHTML = "<span class='pill-gold'>" + plan + "</span> <span class='verified'>✦</span> Member · "
+        + "<strong>" + left + "</strong> of " + limit + " premium conversions left this month" + creditChip();
       upgradeLink.textContent = "Go unlimited with Team →";
       upgradeLink.hidden = left > 25;
     }
@@ -189,6 +225,18 @@
         btn.textContent = p === "free" ? "Free plan" : "Choose " + p;
       }
     });
+    // Premium framing of the pricing section for members (no "start free").
+    var head = document.querySelector("#plans .section-head");
+    if (head) {
+      var h = head.querySelector("h2"), sub = head.querySelector("p");
+      if (paid) {
+        if (h) h.textContent = "Your membership";
+        if (sub) sub.textContent = "Thanks for being a " + plan + " member. Need more power? Compare options below.";
+      } else {
+        if (h) h.textContent = "Pick your plan";
+        if (sub) sub.textContent = "Start free. Upgrade to Pro for more, or Team for unlimited.";
+      }
+    }
   }
 
   /* ---------- modals ---------- */
