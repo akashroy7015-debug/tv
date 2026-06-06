@@ -754,7 +754,9 @@
       return loadLib("https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js", "heic2any")
         .then(function () {
           if (!window.heic2any) throw new Error("HEIC decoder didn't load — check your connection and retry.");
-          return window.heic2any({ blob: file, toType: "image/png" });
+          var conv = window.heic2any({ blob: file, toType: "image/png" });
+          var timeout = new Promise(function (_, rej) { setTimeout(function () { rej(new Error("HEIC took too long — try a smaller photo, or convert it on your phone first.")); }, 90000); });
+          return Promise.race([conv, timeout]);
         })
         .then(function (out) {
           var blob = Array.isArray(out) ? out[0] : out; // multi-image HEIC → first frame
@@ -799,7 +801,9 @@
   }
   function convertImage(onSuccess) {
     var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
-    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting…</small>";
+    var nm = (currentFile.name || "").toLowerCase();
+    var isHeic = /\.(heic|heif)$/.test(nm) || (currentFile.type || "").indexOf("heic") !== -1;
+    resultBox.innerHTML = "<small style='color:var(--muted)'>" + (isHeic ? "Decoding HEIC… (large photos can take 10–30s)" : "Converting…") + "</small>";
     getSourceCanvas(currentFile).then(function (src) {
       // ICO: cap to 256, output PNG-in-ICO
       if (mime === "ico") {
