@@ -10,6 +10,9 @@ window.FM_CONFIG = {
   plans: { Pro: 9, Team: 29 },
   // Pay-as-you-go: user enters a $ amount. rate = price per credit (must match CREDIT_RATE in Cloudflare).
   credits: { rate: 0.10, presets: [2, 5, 10, 20, 50], min: 1, max: 500 },
+  // Optional conversion server (DOCX↔PDF, EPUB→PDF, email…). Leave "" to keep those "coming soon".
+  convertServer: "",
+  convertToken: "",
   // Direct PayPal (optional). Fill clientId + plan IDs to show a PayPal button at checkout.
   // Leave clientId "" to hide PayPal and use card (Lemon Squeezy) only.
   paypal: { clientId: "AbfY1i6NmDs1dRrKSoT7L1zcTwg6qj3LJtbYoTPOH5B82iiPW3zKW5hT49FWhXkwt4yfTvge9ZzRyIxI", planPro: "P-9LS40434WE552315VNIQ3PYI", planTeam: "P-0TH89402KG975712XNIQ3QKY", env: "live" }

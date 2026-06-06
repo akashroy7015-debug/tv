@@ -46,12 +46,12 @@
     video: { accept: "video/*", engine: "ffmpeg", hint: "MP4 · WebM · MOV · MKV · GIF — converted in your browser",
       formats: [["mp4", "MP4"], ["webm", "WebM"], ["gif", "GIF"], ["mov", "MOV"], ["mkv", "MKV"]],
       note: "Converted privately in your browser. Large videos may take a while." },
-    document: { accept: ".pdf,.docx,.doc,.odt,.epub,.rtf", engine: "soon", hint: "DOCX · PDF · EPUB — coming soon",
-      formats: [["pdf", "PDF"], ["docx", "DOCX"]],
-      note: "Word/PDF/EPUB conversion is coming soon. Image, spreadsheet, audio & video work today." },
-    email: { accept: ".eml,.msg,.mbox,.pst", engine: "soon", hint: "EML · MSG · MBOX — coming soon",
+    document: { accept: ".pdf,.docx,.doc,.odt,.epub,.rtf,.pptx", engine: "document", hint: "DOCX · PDF · EPUB · PPTX → PDF / DOCX / HTML / TXT / PNG / JPG",
+      formats: [["pdf", "PDF"], ["docx", "DOCX"], ["html", "HTML"], ["txt", "TXT"], ["png", "PNG"], ["jpg", "JPG"]],
+      note: "DOCX→HTML/TXT and PDF→PNG/JPG run in your browser. DOCX↔PDF and EPUB→PDF use our conversion server." },
+    email: { accept: ".eml,.msg,.mbox", engine: "email", hint: "EML · MSG · MBOX → PDF / HTML",
       formats: [["pdf", "PDF"], ["html", "HTML"]],
-      note: "Email conversion is coming soon. Image, spreadsheet, audio & video work today." }
+      note: "Email conversion runs on our conversion server (set up by the site owner)." }
   };
   var currentCat = "image";
 
@@ -573,6 +573,8 @@
     if (engine === "image") convertImage(onSuccess);
     else if (engine === "sheet") convertSheet(onSuccess);
     else if (engine === "ffmpeg") ffmpegConvert(onSuccess);
+    else if (engine === "document") convertDocument(onSuccess);
+    else if (engine === "email") serverConvertFile(onSuccess);
     else comingSoon();
   }
   /* ---------- lazy script loader (for HEIC/TIFF/spreadsheet libraries) ---------- */
@@ -595,6 +597,98 @@
     msg.textContent = "This format is coming soon.";
     var sub = document.createElement("small"); sub.textContent = "Image, PDF, audio and video convert right here in your browser today.";
     resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
+  }
+
+  /* ---------- document conversions ---------- */
+  function convertDocument(onSuccess) {
+    var fmt = formatSelect.value;
+    var nm = (currentFile.name || "").toLowerCase();
+    var isDocx = /\.docx?$/.test(nm);
+    var isPdf = /\.pdf$/.test(nm);
+    if (isDocx && (fmt === "html" || fmt === "txt")) return docxToText(fmt, onSuccess);
+    if (isPdf && (fmt === "png" || fmt === "jpg")) return pdfToImages(fmt, onSuccess);
+    return serverConvertFile(onSuccess); // DOCX↔PDF, EPUB→PDF, etc.
+  }
+
+  function docxToText(fmt, onSuccess) {
+    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting…</small>";
+    loadLib("https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js", "mammoth")
+      .then(function () { return currentFile.arrayBuffer(); })
+      .then(function (buf) {
+        var M = window.mammoth;
+        return fmt === "txt" ? M.extractRawText({ arrayBuffer: buf }) : M.convertToHtml({ arrayBuffer: buf });
+      })
+      .then(function (r) {
+        var content = fmt === "txt" ? r.value
+          : "<!doctype html><meta charset='utf-8'><body>" + r.value + "</body>";
+        var blob = new Blob([content], { type: fmt === "txt" ? "text/plain" : "text/html" });
+        renderResult(blob, fmt, onSuccess);
+      })
+      .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+  }
+
+  function pdfToImages(fmt, onSuccess) {
+    resultBox.innerHTML = "<small style='color:var(--muted)'>Rendering pages…</small>";
+    var mime = fmt === "jpg" ? "image/jpeg" : "image/png";
+    loadLib("https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js", "pdfjsLib")
+      .then(function () {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        return currentFile.arrayBuffer();
+      })
+      .then(function (buf) { return window.pdfjsLib.getDocument({ data: buf }).promise; })
+      .then(function (pdf) {
+        var pages = pdf.numPages;
+        var renderPage = function (n) {
+          return pdf.getPage(n).then(function (page) {
+            var vp = page.getViewport({ scale: 2 });
+            var c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+            if (mime === "image/jpeg") { var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); }
+            return page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise
+              .then(function () { return new Promise(function (res) { c.toBlob(res, mime, 0.92); }); });
+          });
+        };
+        if (pages === 1) {
+          return renderPage(1).then(function (blob) { renderResult(blob, fmt, onSuccess); });
+        }
+        // Multiple pages → zip them
+        return loadLib("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js", "JSZip").then(function () {
+          var zip = new window.JSZip(); var chain = Promise.resolve();
+          for (var i = 1; i <= pages; i++) {
+            (function (n) { chain = chain.then(function () { return renderPage(n); }).then(function (b) { zip.file("page-" + n + "." + fmt, b); }); })(i);
+          }
+          return chain.then(function () { return zip.generateAsync({ type: "blob" }); })
+            .then(function (zb) { renderResult(zb, "zip", onSuccess); });
+        });
+      })
+      .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+  }
+
+  /* ---------- server conversion (heavy office/email formats) ---------- */
+  function serverConvertFile(onSuccess) {
+    var cfg = window.FM_CONFIG;
+    var fmt = formatSelect.value;
+    if (!cfg.convertServer) {
+      resultBox.innerHTML = "";
+      var icon = document.createElement("div"); icon.style.fontSize = "2.2rem"; icon.textContent = "🛠️";
+      var msg = document.createElement("p"); msg.style.color = "var(--text)"; msg.style.margin = "6px 0";
+      msg.textContent = "This conversion needs FileMorph's server, which isn't switched on yet.";
+      var sub = document.createElement("small"); sub.textContent = "Image, spreadsheet, audio, video, DOCX→HTML/TXT and PDF→image all work in your browser today.";
+      resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
+      return;
+    }
+    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting on the server…</small>";
+    var fd = new FormData();
+    fd.append("file", currentFile, currentFile.name || "file");
+    fd.append("format", fmt);
+    var headers = {};
+    if (cfg.convertToken) headers["x-convert-token"] = cfg.convertToken;
+    fetch(cfg.convertServer.replace(/\/$/, "") + "/convert", { method: "POST", headers: headers, body: fd })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || ("server error " + r.status)); });
+        return r.blob();
+      })
+      .then(function (blob) { renderResult(blob, fmt, onSuccess); })
+      .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
   }
 
   /* ---------- in-browser audio/video converter (ffmpeg.wasm — our own, no upload) ---------- */
@@ -755,7 +849,7 @@
     var isImg = ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp";
     if (isImg) { var out = new Image(); out.src = url; resultBox.appendChild(out); }
     else {
-      var glyph = { pdf: "📄", ico: "🟦", csv: "📑", xlsx: "📊" }[ext] || "📁";
+      var glyph = { pdf: "📄", ico: "🟦", csv: "📑", xlsx: "📊", html: "🌐", txt: "📃", docx: "📝", zip: "🗜️" }[ext] || "📁";
       var icon = document.createElement("div"); icon.style.fontSize = "2.6rem"; icon.textContent = glyph; resultBox.appendChild(icon);
     }
     var meta = document.createElement("small"); meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
