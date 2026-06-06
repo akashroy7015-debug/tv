@@ -3,6 +3,13 @@ main = "worker.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+# Custom domains — declared here so `wrangler deploy` preserves them
+# instead of removing the live filemorph.shop / www routes.
+routes = [
+  { pattern = "filemorph.shop", custom_domain = true },
+  { pattern = "www.filemorph.shop", custom_domain = true }
+]
+
 # Serve the static site from public/ and expose it to the Worker as env.ASSETS
 [assets]
 directory = "./public"
