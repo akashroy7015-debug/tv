@@ -27,7 +27,9 @@
       verify: function () { return Promise.resolve(this.isPaid()); },
       credits: function () { return 0; },
       spendCredit: function () { return Promise.resolve(-1); },
-      getToken: function () { return Promise.resolve(null); }
+      getToken: function () { return Promise.resolve(null); },
+      resetPassword: function () { return Promise.resolve(true); },
+      updatePassword: function () { return Promise.resolve(true); }
     };
   }
 
@@ -41,7 +43,10 @@
       var s = await sb.auth.getSession();
       currentUser = s.data.session ? s.data.session.user : null;
       if (currentUser) { await loadSub(); await loadWallet(); }
-      sb.auth.onAuthStateChange(function (_e, session) { currentUser = session ? session.user : null; });
+      sb.auth.onAuthStateChange(function (_e, session) {
+        currentUser = session ? session.user : null;
+        if (_e === "PASSWORD_RECOVERY" && typeof window.FMonRecovery === "function") { try { window.FMonRecovery(); } catch (e) {} }
+      });
     })();
     async function loadSub() {
       if (!currentUser) { sub = null; return; }
@@ -126,7 +131,19 @@
           return bal;
         } catch (e) { return -1; }
       },
-      refresh: async function () { await loadSub(); await loadWallet(); }
+      refresh: async function () { await loadSub(); await loadWallet(); },
+      // Email a password-reset link that returns to the site (recovery flow).
+      resetPassword: async function (email) {
+        var r = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+        if (r.error) throw r.error;
+        return true;
+      },
+      // Set a new password (used after clicking the recovery link).
+      updatePassword: async function (newPassword) {
+        var r = await sb.auth.updateUser({ password: newPassword });
+        if (r.error) throw r.error;
+        return true;
+      }
     };
   }
 

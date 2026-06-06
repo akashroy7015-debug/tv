@@ -305,6 +305,7 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
 .modal-row { display: flex; gap: 12px; }
 .modal-row label { flex: 1; }
 .modal-fine { margin-top: 14px; font-size: 0.78rem; color: var(--muted); text-align: center; }
+#forgotLink { display: block; margin: 12px auto 0; font-size: 0.85rem; }
 
 /* Toast */
 .toast {

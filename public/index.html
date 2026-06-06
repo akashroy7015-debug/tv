@@ -38,7 +38,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5490907338841593" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
   <!-- ===== Header ===== -->
@@ -312,10 +312,11 @@
       <h3 id="authTitle">Welcome back</h3>
       <p class="modal-sub" id="authSub">Log in to your FileMorph account.</p>
       <form id="authForm" class="modal-form">
-        <label>Email<input type="email" id="authEmail" required placeholder="you@example.com" /></label>
-        <label>Password<input type="password" id="authPass" required placeholder="••••••••" minlength="6" /></label>
+        <label id="authEmailLabel">Email<input type="email" id="authEmail" required placeholder="you@example.com" /></label>
+        <label id="authPassLabel">Password<input type="password" id="authPass" required placeholder="••••••••" minlength="6" /></label>
         <button type="submit" class="btn btn-primary btn-block" id="authSubmit">Log in</button>
       </form>
+      <button type="button" class="link-btn" id="forgotLink">Forgot password?</button>
       <p class="modal-fine" id="authMsg">Secure accounts powered by Supabase.</p>
     </div>
   </div>
@@ -360,8 +361,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="config.js?v=6"></script>
-  <script src="backend.js?v=6"></script>
-  <script src="script.js?v=6"></script>
+  <script src="config.js?v=7"></script>
+  <script src="backend.js?v=7"></script>
+  <script src="script.js?v=7"></script>
 </body>
 </html>

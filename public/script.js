@@ -51,7 +51,7 @@
       note: "DOCX→HTML/TXT and PDF→PNG/JPG run in your browser. DOCX↔PDF and EPUB→PDF use our conversion server." },
     email: { accept: ".eml,.msg,.mbox", engine: "email", hint: "EML · MSG · MBOX → PDF / HTML",
       formats: [["pdf", "PDF"], ["html", "HTML"]],
-      note: "Email conversion runs on our conversion server (set up by the site owner)." }
+      note: "Email files (EML · MSG · MBOX) convert to PDF or HTML on our secure server." }
   };
   var currentCat = "image";
 
@@ -63,6 +63,8 @@
   var convertBtn = $("convertBtn"), previewWrap = $("previewWrap"), previewImg = $("previewImg"), origMeta = $("origMeta"), resultBox = $("resultBox");
   var authModal = $("authModal"), authForm = $("authForm"), authEmail = $("authEmail"), authPass = $("authPass");
   var authSub = $("authSub"), authSubmit = $("authSubmit"), authMsg = $("authMsg");
+  var forgotLink = $("forgotLink"), authEmailLabel = $("authEmailLabel"), authPassLabel = $("authPassLabel");
+  var authTabs = document.querySelector(".auth-tabs");
   var authMode = "login";
   var planModal = $("planModal"), planForm = $("planForm"), planSub = $("planSub");
   var toast = $("toast");
@@ -201,10 +203,24 @@
   function setAuthMode(mode) {
     authMode = mode;
     document.querySelectorAll(".auth-tab").forEach(function (t) { t.classList.toggle("active", t.getAttribute("data-mode") === mode); });
+    // default layout
+    if (authTabs) authTabs.style.display = (mode === "reset" || mode === "recovery") ? "none" : "";
+    if (authEmailLabel) authEmailLabel.style.display = (mode === "recovery") ? "none" : "";
+    if (authPassLabel) authPassLabel.style.display = (mode === "reset") ? "none" : "";
+    if (forgotLink) forgotLink.style.display = (mode === "login") ? "" : "none";
     if (mode === "signup") {
       $("authTitle").textContent = "Create your account";
       authSub.textContent = "Sign up — we'll email you a verification link.";
       authSubmit.textContent = "Sign up";
+    } else if (mode === "reset") {
+      $("authTitle").textContent = "Reset your password";
+      authSub.textContent = "Enter your email — we'll send you a reset link.";
+      authSubmit.textContent = "Send reset link";
+    } else if (mode === "recovery") {
+      $("authTitle").textContent = "Set a new password";
+      authSub.textContent = "Choose a new password for your account.";
+      authPass.value = ""; authPass.placeholder = "New password";
+      authSubmit.textContent = "Update password";
     } else {
       $("authTitle").textContent = "Welcome back";
       authSub.textContent = "Log in to your FileMorph account.";
@@ -212,6 +228,7 @@
     }
     authMsg.style.color = ""; authMsg.textContent = "Secure accounts powered by Supabase.";
   }
+  if (forgotLink) forgotLink.addEventListener("click", function () { setAuthMode("reset"); setTimeout(function () { authEmail.focus(); }, 50); });
   function openAuth(mode) { setAuthMode(mode || "login"); openModal(authModal); setTimeout(function () { authEmail.focus(); }, 50); }
   document.querySelectorAll(".auth-tab").forEach(function (t) {
     t.addEventListener("click", function () { setAuthMode(t.getAttribute("data-mode")); });
@@ -445,6 +462,27 @@
     e.preventDefault();
     var email = authEmail.value.trim(), pass = authPass.value;
     authMsg.style.color = ""; authMsg.textContent = "Please wait…";
+    if (authMode === "reset") {
+      if (!email) { authMsg.style.color = "#ff6b6b"; authMsg.textContent = "Enter your email first."; return; }
+      B.resetPassword(email).then(function () {
+        authMsg.style.color = "var(--accent-2)";
+        authMsg.textContent = "✓ Reset link sent to " + email + ". Check your inbox (and spam).";
+      }).catch(function (err) {
+        authMsg.style.color = "#ff6b6b"; authMsg.textContent = friendlyAuthError(err.message);
+      });
+      return;
+    }
+    if (authMode === "recovery") {
+      if (!pass || pass.length < 6) { authMsg.style.color = "#ff6b6b"; authMsg.textContent = "Password must be at least 6 characters."; return; }
+      B.updatePassword(pass).then(function () {
+        history.replaceState({}, "", location.pathname);
+        authMsg.style.color = "var(--accent-2)"; authMsg.textContent = "✓ Password updated! Logging you in…";
+        setTimeout(function () { closeModal(authModal); renderAccount(); renderUsage(); showToast("Password updated — you're logged in."); }, 900);
+      }).catch(function (err) {
+        authMsg.style.color = "#ff6b6b"; authMsg.textContent = friendlyAuthError(err.message);
+      });
+      return;
+    }
     if (authMode === "signup") {
       B.signUp(email, pass).then(function (res) {
         if (res && res.needsVerification) {
@@ -954,9 +992,16 @@
     }
   }
 
+  /* ---------- password recovery (arriving from the reset email) ---------- */
+  function openRecovery() { openAuth("recovery"); setTimeout(function () { authPass.focus(); }, 50); }
+  window.FMonRecovery = openRecovery;
+  function checkRecovery() {
+    if (/type=recovery/.test(location.hash) || location.search.indexOf("type=recovery") !== -1) openRecovery();
+  }
+
   /* ---------- init ---------- */
   B.ready.then(function () {
-    renderAccount(); renderUsage(); applyCategory("image"); handleReturn();
+    renderAccount(); renderUsage(); applyCategory("image"); handleReturn(); checkRecovery();
     // Self-heal: logged in but showing Free? Ask Lemon Squeezy directly.
     if (B.verify && getUser() && !isPaid()) {
       B.verify().then(function (active) { if (active) { renderAccount(); renderUsage(); showToast("Welcome back — your " + currentPlan() + " plan is active."); } });
