@@ -599,6 +599,25 @@
     resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
   }
 
+  // Spinner + optional progress bar shown while converting.
+  function showProgress(label, determinate) {
+    resultBox.innerHTML = "";
+    var wrap = document.createElement("div"); wrap.className = "conv-status";
+    var sp = document.createElement("div"); sp.className = "spinner"; wrap.appendChild(sp);
+    var fill = null;
+    if (determinate) {
+      var bar = document.createElement("div"); bar.className = "conv-bar";
+      fill = document.createElement("i"); bar.appendChild(fill); wrap.appendChild(bar);
+    }
+    var lab = document.createElement("div"); lab.className = "conv-label"; lab.textContent = label || "Converting…";
+    wrap.appendChild(lab);
+    resultBox.appendChild(wrap);
+    return {
+      setPercent: function (p) { if (fill) fill.style.width = Math.max(0, Math.min(100, p)) + "%"; },
+      setLabel: function (t) { lab.textContent = t; }
+    };
+  }
+
   /* ---------- document conversions ---------- */
   function convertDocument(onSuccess) {
     var fmt = formatSelect.value;
@@ -611,7 +630,7 @@
   }
 
   function docxToText(fmt, onSuccess) {
-    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting…</small>";
+    showProgress("Converting document…", false);
     loadLib("https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js", "mammoth")
       .then(function () { return currentFile.arrayBuffer(); })
       .then(function (buf) {
@@ -628,7 +647,7 @@
   }
 
   function pdfToImages(fmt, onSuccess) {
-    resultBox.innerHTML = "<small style='color:var(--muted)'>Rendering pages…</small>";
+    var prog = showProgress("Rendering pages…", true);
     var mime = fmt === "jpg" ? "image/jpeg" : "image/png";
     loadLib("https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js", "pdfjsLib")
       .then(function () {
@@ -648,15 +667,21 @@
           });
         };
         if (pages === 1) {
+          prog.setPercent(50); prog.setLabel("Rendering…");
           return renderPage(1).then(function (blob) { renderResult(blob, fmt, onSuccess); });
         }
         // Multiple pages → zip them
         return loadLib("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js", "JSZip").then(function () {
           var zip = new window.JSZip(); var chain = Promise.resolve();
           for (var i = 1; i <= pages; i++) {
-            (function (n) { chain = chain.then(function () { return renderPage(n); }).then(function (b) { zip.file("page-" + n + "." + fmt, b); }); })(i);
+            (function (n) {
+              chain = chain.then(function () { return renderPage(n); }).then(function (b) {
+                zip.file("page-" + n + "." + fmt, b);
+                prog.setPercent(Math.round((n / pages) * 100)); prog.setLabel("Page " + n + " / " + pages);
+              });
+            })(i);
           }
-          return chain.then(function () { return zip.generateAsync({ type: "blob" }); })
+          return chain.then(function () { prog.setLabel("Zipping…"); return zip.generateAsync({ type: "blob" }); })
             .then(function (zb) { renderResult(zb, "zip", onSuccess); });
         });
       })
@@ -676,7 +701,7 @@
       resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
       return;
     }
-    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting on the server…</small>";
+    showProgress("Converting on our server…", false);
     var fd = new FormData();
     fd.append("file", currentFile, currentFile.name || "file");
     fd.append("format", fmt);
@@ -714,15 +739,11 @@
     var fmt = formatSelect.value;
     var inName = "in_" + (currentFile.name || "file").replace(/[^\w.\-]/g, "_");
     var outName = "out." + fmt;
-    resultBox.innerHTML = "";
-    var status = document.createElement("p");
-    status.style.color = "var(--text)"; status.style.margin = "0";
-    status.innerHTML = "⏳ Loading converter…<br><small style='color:var(--muted)'>First run downloads the engine (~30 MB), then it's instant.</small>";
-    resultBox.appendChild(status);
-
+    var prog = showProgress("Loading converter… (first run downloads it once)", true);
     loadFFmpeg().then(function (x) {
       var ff = x.ff, util = x.util;
-      try { ff.on("progress", function (p) { status.innerHTML = "⏳ Converting… " + Math.max(1, Math.min(99, Math.round((p.progress || 0) * 100))) + "%"; }); } catch (e) {}
+      prog.setLabel("Converting…");
+      try { ff.on("progress", function (p) { var pct = Math.max(1, Math.min(99, Math.round((p.progress || 0) * 100))); prog.setPercent(pct); prog.setLabel("Converting… " + pct + "%"); }); } catch (e) {}
       return util.fetchFile(currentFile)
         .then(function (buf) { return ff.writeFile(inName, buf); })
         .then(function () { return ff.exec(["-i", inName, outName]); })
@@ -803,7 +824,7 @@
     var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
     var nm = (currentFile.name || "").toLowerCase();
     var isHeic = /\.(heic|heif)$/.test(nm) || (currentFile.type || "").indexOf("heic") !== -1;
-    resultBox.innerHTML = "<small style='color:var(--muted)'>" + (isHeic ? "Decoding HEIC… (large photos can take 10–30s)" : "Converting…") + "</small>";
+    showProgress(isHeic ? "Decoding HEIC… (large photos can take 10–30s)" : "Converting…", false);
     getSourceCanvas(currentFile).then(function (src) {
       // ICO: cap to 256, output PNG-in-ICO
       if (mime === "ico") {
@@ -836,7 +857,7 @@
   /* ---------- spreadsheet converter (XLSX/XLS/ODS/CSV ⇄ CSV/XLSX, in-browser) ---------- */
   function convertSheet(onSuccess) {
     var fmt = formatSelect.value;
-    resultBox.innerHTML = "<small style='color:var(--muted)'>Converting spreadsheet…</small>";
+    showProgress("Converting spreadsheet…", false);
     loadLib("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js", "XLSX").then(function () {
       return currentFile.arrayBuffer();
     }).then(function (buf) {
