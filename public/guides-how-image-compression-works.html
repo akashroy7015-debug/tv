@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How Image Compression Works (In Plain English) | FileMorph</title>
-  <meta name="description" content="A simple explanation of how image compression shrinks files, and how to keep quality." />
+  <title>How Image Compression Works — FileMorph</title>
+  <meta name="description" content="A clear, non-technical explanation of how image compression shrinks photos, what changes between formats, and how to keep quality while reducing file size." />
   <link rel="canonical" href="https://filemorph.shop/guides-how-image-compression-works.html" />
-  <meta property="og:title" content="How Image Compression Works (In Plain English) — FileMorph" />
-  <meta property="og:description" content="A simple explanation of how image compression shrinks files, and how to keep quality." />
-  <meta property="og:image" content="https://filemorph.shop/og.png" />
-  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -21,13 +17,55 @@
     </div>
   </header>
   <main class="page">
-<h1>How Image Compression Works</h1><p class="updated">Why a photo can go from 8 MB to 800 KB and still look fine.</p>
- <p>Compression makes image files smaller by storing the same picture more cleverly — and, for lossy formats, by dropping detail you won't notice.</p>
- <h2>Two ways files shrink</h2><ul><li><strong>Lossless</strong> (PNG): finds patterns and stores them compactly. Nothing is lost.</li><li><strong>Lossy</strong> (JPG/WebP): removes fine detail and color information the human eye barely registers.</li></ul>
- <h2>The quality dial</h2><p>Lossy formats let you choose a quality level. Around <strong>80–85%</strong> is usually the sweet spot: big size savings with no visible difference. Push it too low and you'll see blocky "artifacts" around edges.</p>
- <h2>Practical tips</h2><ul><li>Resize before compressing — don't keep a 4000px image where 800px will show.</li><li>Use WebP for the smallest web files.</li><li>Keep a lossless master (PNG/original) and export compressed copies.</li></ul>
- <p>You can compress and convert images privately in your browser with <a href="/#convert">FileMorph</a> — just pick a format and quality.</p>
-    <div class="card"><p style="margin:0"><strong>Try it:</strong> convert images, PDF, audio &amp; video privately in your browser with <a href="/#convert">FileMorph</a>.</p></div>
+    <h1>How Image Compression Works</h1>
+    <p class="updated">Why a photo can shrink from 8&nbsp;MB to 800&nbsp;KB and still look great.</p>
+
+    <p>Every digital photo is, at heart, a grid of coloured dots called pixels. A modern phone photo has
+    tens of millions of them, and storing the exact colour of each one would be enormous. Image
+    compression is the clever set of tricks that shrinks that data — sometimes by 90% — while keeping the
+    picture looking the same to your eyes. Here is how it works, without the maths.</p>
+
+    <h2>Step 1: spotting redundancy</h2>
+    <p>Photos are full of repetition: a blue sky is thousands of nearly-identical pixels. Compression finds
+    these patterns and stores them compactly — "this whole region is roughly this blue" — instead of
+    describing each pixel separately. This part is <strong>lossless</strong>: nothing is thrown away, the
+    data is just written more efficiently.</p>
+
+    <h2>Step 2: dropping what you won't notice</h2>
+    <p>To get really small, <strong>lossy</strong> formats like JPG and WebP go further. Human eyes are very
+    sensitive to brightness but much less sensitive to subtle colour changes, so these formats keep detail
+    where you notice it and simplify it where you don't. They work in small blocks of the image, smoothing
+    fine variations that your eye would gloss over anyway. Turn the quality down too far and those blocks
+    become visible as "artefacts."</p>
+
+    <h2>Quality settings: the dial you control</h2>
+    <p>The quality slider you see when exporting a JPG controls how aggressive that second step is. At
+    <strong>90–100%</strong>, the loss is invisible and the file is moderately small. At
+    <strong>60–80%</strong>, the file shrinks a lot with only minor loss — ideal for the web. Below that,
+    you start to see blurring and blocky edges, especially around text.</p>
+
+    <h2>Why format choice matters</h2>
+    <p>Different formats compress differently. <strong>PNG</strong> is lossless and best for sharp graphics;
+    <strong>JPG</strong> is lossy and great for photos; <strong>WebP</strong> can do both and is typically
+    25–35% smaller than either. Choosing the right one for the job is the easiest way to get a small file
+    that still looks good — see our <a href="/guides-best-image-format-for-web.html">best image format for
+    the web</a> and <a href="/guides-lossless-vs-lossy.html">lossless vs lossy</a> guides.</p>
+
+    <h2>Practical tips to shrink images well</h2>
+    <ul>
+      <li><strong>Resize first:</strong> a 6000-pixel-wide photo displayed at 1200px wastes data — scale it down.</li>
+      <li><strong>Pick the right format:</strong> JPG/WebP for photos, PNG for graphics and text.</li>
+      <li><strong>Use 70–85% quality</strong> for web images; reserve 90%+ for printing.</li>
+      <li><strong>Avoid re-saving lossy files repeatedly</strong> — each save loses a little more.</li>
+    </ul>
+
+    <h2>Frequently asked questions</h2>
+    <p><strong>Does compression always reduce quality?</strong> Lossless compression does not; lossy does,
+    but at high settings the loss is invisible.</p>
+    <p><strong>What's the easiest win?</strong> Resizing the image to the size you actually display it at —
+    it often matters more than the format.</p>
+
+    <div class="card"><p style="margin:0"><strong>Try it:</strong> open the <a href="/#convert">FileMorph converter</a>, drop a photo, and use the quality slider to balance size and clarity.</p></div>
   </main>
   <footer class="site-footer">
     <div class="container footer-bottom footer-links">

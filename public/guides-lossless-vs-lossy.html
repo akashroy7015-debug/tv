@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lossless vs Lossy Compression Explained | FileMorph</title>
-  <meta name="description" content="The difference between lossless and lossy compression, with simple examples for images, audio and video." />
+  <title>Lossless vs Lossy Compression Explained — FileMorph</title>
+  <meta name="description" content="What lossless and lossy compression really mean, with real examples from images, audio and video, and how to choose the right one for your files." />
   <link rel="canonical" href="https://filemorph.shop/guides-lossless-vs-lossy.html" />
-  <meta property="og:title" content="Lossless vs Lossy Compression Explained — FileMorph" />
-  <meta property="og:description" content="The difference between lossless and lossy compression, with simple examples for images, audio and video." />
-  <meta property="og:image" content="https://filemorph.shop/og.png" />
-  <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -21,13 +17,52 @@
     </div>
   </header>
   <main class="page">
-<h1>Lossless vs Lossy Compression</h1><p class="updated">Why some files shrink more — and what you give up.</p>
- <p>Compression makes files smaller. The big question is whether it throws any data away.</p>
- <h2>Lossy compression</h2><p>Lossy compression <strong>discards</strong> information your eyes or ears are unlikely to miss, achieving much smaller files. JPG, MP3, AAC and most video use it. The trade-off: quality drops a little each time you re-save, and heavy compression can show artifacts.</p>
- <h2>Lossless compression</h2><p>Lossless compression keeps <strong>every bit</strong> of the original — it just stores it more efficiently. PNG, FLAC and ZIP are lossless. Files are larger than lossy, but quality is perfect and unchanged no matter how many times you save.</p>
- <h2>Which should you use?</h2><ul><li><strong>Photos for the web:</strong> lossy (JPG/WebP) — small and good enough.</li><li><strong>Logos, screenshots, editing masters:</strong> lossless (PNG).</li><li><strong>Casual music:</strong> lossy (MP3/AAC). <strong>Archiving music:</strong> lossless (FLAC/WAV).</li></ul>
- <p>Rule of thumb: use lossy for sharing, lossless for keeping the original safe.</p>
-    <div class="card"><p style="margin:0"><strong>Try it:</strong> convert images, PDF, audio &amp; video privately in your browser with <a href="/#convert">FileMorph</a>.</p></div>
+    <h1>Lossless vs Lossy Compression</h1>
+    <p class="updated">The single idea behind why some files are tiny and others are huge.</p>
+
+    <p>Almost every file format you use makes a choice between two kinds of compression:
+    <strong>lossless</strong> and <strong>lossy</strong>. Understanding the difference helps you pick the
+    right format every time — and explains why a photo can be 300&nbsp;KB while the "same" image is 4&nbsp;MB.</p>
+
+    <h2>Lossless compression</h2>
+    <p>Lossless compression makes a file smaller <strong>without throwing anything away</strong>. When you
+    open the file, you get back exactly what went in — every pixel, every sample. It works by storing
+    repetition more efficiently (for example, "500 white pixels" instead of listing each one). Examples:
+    <strong>PNG</strong> images, <strong>FLAC</strong> audio, and ZIP archives. The trade-off is that the
+    savings are modest, so files stay relatively large.</p>
+
+    <h2>Lossy compression</h2>
+    <p>Lossy compression makes files <strong>dramatically smaller by permanently discarding</strong>
+    information humans are least likely to notice — subtle colour shifts, sounds masked by louder ones.
+    The result is "good enough" and far smaller. Examples: <strong>JPG</strong> images,
+    <strong>MP3</strong> audio, and <strong>MP4</strong> video. The catch: every time you re-save a lossy
+    file, you lose a little more — quality only goes down, never back up.</p>
+
+    <h2>Side-by-side</h2>
+    <ul>
+      <li><strong>Lossless:</strong> perfect quality, larger files — PNG, FLAC, ZIP.</li>
+      <li><strong>Lossy:</strong> tiny files, slight quality loss — JPG, MP3, MP4, WebP (lossy mode).</li>
+    </ul>
+
+    <h2>How to choose</h2>
+    <p>Use <strong>lossless</strong> when quality is critical or you will keep editing: master audio,
+    archival photos, logos, screenshots with text. Use <strong>lossy</strong> for the final, shareable
+    version where small size wins: web photos, podcasts, videos. A common professional workflow is to
+    <strong>edit in lossless and export to lossy</strong> only at the very end.</p>
+
+    <h2>Why this explains "huge" files</h2>
+    <p>A WAV (lossless, uncompressed) can be ten times bigger than an MP3 of the same recording; a PNG photo
+    can dwarf the JPG version. Neither is "wrong" — they are simply optimised for different goals. See it in
+    action in our <a href="/guides-wav-to-mp3.html">WAV to MP3</a> and
+    <a href="/guides-png-vs-jpg.html">PNG vs JPG</a> guides.</p>
+
+    <h2>Frequently asked questions</h2>
+    <p><strong>Does converting lossy → lossless restore quality?</strong> No. Once detail is discarded it is
+    gone; converting an MP3 to WAV just makes a big file of the already-reduced audio.</p>
+    <p><strong>Is lossy bad?</strong> Not at all — it powers the modern web. It is only a problem when you
+    re-compress the same file many times.</p>
+
+    <div class="card"><p style="margin:0"><strong>Convert smartly:</strong> open the <a href="/#convert">FileMorph converter</a> to switch between lossless and lossy formats for images, audio and video.</p></div>
   </main>
   <footer class="site-footer">
     <div class="container footer-bottom footer-links">
