@@ -12,6 +12,10 @@ import { onRequestPost as manageSub } from "./functions/api/manage-subscription.
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // ads.txt → Ezoic's managed AdsTxtManager (301, always up to date)
+    if (url.pathname === "/ads.txt") {
+      return Response.redirect("https://srv.adstxtmanager.com/19390/filemorph.shop", 301);
+    }
     if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
       return createCheckout({ request, env });
     }
