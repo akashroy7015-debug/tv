@@ -38,7 +38,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5490907338841593" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <!-- ===== Header ===== -->
@@ -386,8 +386,30 @@
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="config.js?v=8"></script>
-  <script src="backend.js?v=8"></script>
-  <script src="script.js?v=8"></script>
+  <!-- ===== Cookie consent ===== -->
+  <div class="cookie-banner" id="cookieBanner" hidden>
+    <p>We use cookies to keep you signed in and, with your consent, to show personalized ads.
+       See our <a href="/privacy.html">Privacy Policy</a>.</p>
+    <div class="cookie-actions">
+      <button class="btn btn-ghost btn-sm" id="cookieReject">Reject</button>
+      <button class="btn btn-primary btn-sm" id="cookieAccept">Accept</button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var KEY = "fm_cookie_consent";
+      var banner = document.getElementById("cookieBanner");
+      try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+      if (banner) banner.hidden = false;
+      function decide(v) { try { localStorage.setItem(KEY, v); } catch (e) {} if (banner) banner.hidden = true; }
+      var a = document.getElementById("cookieAccept"), r = document.getElementById("cookieReject");
+      if (a) a.addEventListener("click", function () { decide("accepted"); });
+      if (r) r.addEventListener("click", function () { decide("rejected"); });
+    })();
+  </script>
+
+  <script src="config.js?v=9"></script>
+  <script src="backend.js?v=9"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>
