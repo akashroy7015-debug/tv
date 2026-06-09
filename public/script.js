@@ -34,9 +34,9 @@
 
   /* ---------- category config ---------- */
   var CATS = {
-    image: { accept: "image/*,.heic,.heif,.tif,.tiff,.svg", engine: "image", hint: "HEIC · TIFF · SVG · PNG · JPG · WebP → PNG / JPG / WebP / PDF / ICO",
+    image: { accept: "image/*,.heic,.heif,.tif,.tiff,.svg", engine: "image", hint: "HEIC · TIFF · SVG · PNG · JPG · WebP → PNG / JPG / WebP / PDF / ICO · drop many to batch",
       formats: [["image/png", "PNG"], ["image/jpeg", "JPG"], ["image/webp", "WebP"], ["application/pdf", "PDF"], ["ico", "ICO"]],
-      note: "Converted privately in your browser — supports HEIC, TIFF, SVG and more." },
+      note: "Converted privately in your browser — supports HEIC, TIFF, SVG and more. Drop multiple images to batch-convert them into a ZIP." },
     sheet: { accept: ".xlsx,.xls,.csv,.ods", engine: "sheet", hint: "XLSX · XLS · ODS · CSV — converted in your browser",
       formats: [["csv", "CSV"], ["xlsx", "XLSX"]],
       note: "Spreadsheets convert privately in your browser — nothing is uploaded." },
@@ -585,7 +585,7 @@
     c.formats.forEach(function (f) { var o = document.createElement("option"); o.value = f[0]; o.textContent = f[1]; formatSelect.appendChild(o); });
     catNote.hidden = !c.note; catNote.textContent = c.note ? "ℹ️ " + c.note : "";
     updateQualityVisibility();
-    currentFile = null; currentImage = null; convertBtn.disabled = true;
+    currentFile = null; currentImage = null; batchFiles = null; convertBtn.disabled = true;
     previewWrap.hidden = true; resultBox.textContent = "Convert to see the output here.";
   }
   // Quality only affects lossy outputs (JPG, WebP, and the JPEG inside a PDF).
@@ -600,8 +600,10 @@
 
   /* ---------- file handling ---------- */
   var currentFile = null, currentImage = null, currentName = "file";
+  var batchFiles = null; // array of files when batch-converting (image tab)
   function loadFile(file) {
     if (!file) return;
+    batchFiles = null;
     currentFile = file; currentName = (file.name || "file").replace(/\.[^.]+$/, "");
     convertBtn.disabled = false; previewWrap.hidden = false; resultBox.textContent = "Ready — hit Convert.";
     var nm = (file.name || "").toLowerCase();
@@ -619,18 +621,38 @@
       origMeta.innerHTML = "📎 <strong>" + (file.name || "file") + "</strong> · " + humanSize(file.size);
     }
   }
+  fileInput.setAttribute("multiple", "multiple"); // allow batch selection
+  // Load one or many files. Multiple files on the Image tab → batch mode.
+  function loadFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    var isImage = CATS[currentCat].engine === "image";
+    if (files.length === 1 || !isImage) {
+      batchFiles = null;
+      loadFile(files[0]);
+      if (files.length > 1 && !isImage) showToast("Batch conversion is on the Image tab — converting the first file here.");
+      return;
+    }
+    batchFiles = files;
+    currentFile = files[0]; currentName = "files";
+    convertBtn.disabled = false; previewWrap.hidden = false; previewImg.style.display = "none";
+    var total = files.reduce(function (a, f) { return a + (f.size || 0); }, 0);
+    origMeta.innerHTML = "📦 <strong>" + files.length + " files</strong> selected · " + humanSize(total);
+    resultBox.textContent = "Ready — hit Convert to batch-convert all " + files.length + " images into a ZIP.";
+  }
   browseBtn.addEventListener("click", function () { fileInput.click(); });
   dropZone.addEventListener("click", function (e) { if (e.target !== browseBtn) fileInput.click(); });
-  fileInput.addEventListener("change", function () { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+  fileInput.addEventListener("change", function () { loadFiles(fileInput.files); });
   ["dragenter", "dragover"].forEach(function (ev) { dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.add("dragover"); }); });
   ["dragleave", "drop"].forEach(function (ev) { dropZone.addEventListener(ev, function (e) { e.preventDefault(); dropZone.classList.remove("dragover"); }); });
-  dropZone.addEventListener("drop", function (e) { if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+  dropZone.addEventListener("drop", function (e) { loadFiles(e.dataTransfer.files); });
   qualityRange.addEventListener("input", function () { qualityVal.textContent = qualityRange.value + "%"; });
 
   /* ---------- gating + convert ---------- */
   function creditsLeft() { return B.credits ? (B.credits() || 0) : 0; }
 
   convertBtn.addEventListener("click", function () {
+    if (batchFiles && batchFiles.length > 1) { startBatch(); return; }
     if (!currentFile) return;
     var engine = CATS[currentCat].engine;
     if (engine === "soon") { comingSoon(); return; } // don't spend anything on unsupported types
@@ -661,6 +683,55 @@
       showToast("You're out of conversions — buy credits or pick a plan.");
     }
     document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
+  }
+  /* ---------- batch conversion (image tab — convert many at once, private, zip) ---------- */
+  function consumeOne() {
+    if (unlimited()) return;
+    if (quotaLeft() > 0) { bumpUsed(); renderUsage(); return; }
+    if (creditsLeft() > 0) { return B.spendCredit().then(function () { renderUsage(); renderAccount(); }); }
+  }
+  function startBatch() {
+    if (CATS[currentCat].engine !== "image") { showToast("Batch conversion is available on the Image tab."); return; }
+    var n = batchFiles.length;
+    if (!unlimited()) {
+      var avail = quotaLeft() + creditsLeft();
+      if (avail < n) {
+        showToast("Batch of " + n + " needs " + n + " conversions — you have " + avail + ". Upgrade or buy credits.");
+        document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    }
+    batchConvertImages();
+  }
+  function batchConvertImages() {
+    var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
+    var files = batchFiles.slice();
+    var prog = showProgress("Converting 0 / " + files.length + "…", true);
+    loadLib("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js", "JSZip").then(function () {
+      var zip = new window.JSZip(), done = 0, ok = 0, failed = [], chain = Promise.resolve();
+      files.forEach(function (f) {
+        chain = chain.then(function () {
+          return imageFileToBlob(f, mime, quality).then(function (out) {
+            var base = (f.name || "file").replace(/\.[^.]+$/, "");
+            zip.file(base + "." + out.ext, out.blob); ok++;
+            return consumeOne();
+          }).catch(function () { failed.push(f.name || "file"); });
+        }).then(function () {
+          done++; prog.setPercent(Math.round(done / files.length * 100)); prog.setLabel("Converting " + done + " / " + files.length + "…");
+        });
+      });
+      return chain.then(function () { prog.setLabel("Zipping…"); return zip.generateAsync({ type: "blob" }); })
+        .then(function (zb) { renderBatchResult(zb, ok, failed); });
+    }).catch(function (e) { resultBox.textContent = "Batch failed: " + (e && e.message ? e.message : e); });
+  }
+  function renderBatchResult(blob, ok, failed) {
+    var url = URL.createObjectURL(blob);
+    resultBox.innerHTML = "";
+    var icon = document.createElement("div"); icon.style.fontSize = "2.4rem"; icon.textContent = "📦";
+    var meta = document.createElement("small");
+    meta.textContent = ok + " file" + (ok === 1 ? "" : "s") + " converted · " + humanSize(blob.size) + (failed.length ? " · " + failed.length + " failed" : "");
+    var dl = document.createElement("a"); dl.href = url; dl.download = "filemorph-batch.zip"; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ZIP";
+    resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
   }
   function doConvert(onSuccess) {
     var engine = CATS[currentCat].engine;
@@ -930,38 +1001,48 @@
     var out = new Uint8Array(22 + pngBytes.length); out.set(head, 0); out.set(pngBytes, 22);
     return new Blob([out], { type: "image/x-icon" });
   }
-  function convertImage(onSuccess) {
-    var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
-    var nm = (currentFile.name || "").toLowerCase();
-    var isHeic = /\.(heic|heif)$/.test(nm) || (currentFile.type || "").indexOf("heic") !== -1;
-    showProgress(isHeic ? "Decoding HEIC… (large photos can take 10–30s)" : "Converting…", false);
-    getSourceCanvas(currentFile).then(function (src) {
-      // ICO: cap to 256, output PNG-in-ICO
+  // Convert one image file to a {blob, ext} (used by single + batch conversion).
+  function imageFileToBlob(file, mime, quality) {
+    return getSourceCanvas(file).then(function (src) {
       if (mime === "ico") {
         var size = Math.min(256, Math.max(src.width, src.height));
         var ic = document.createElement("canvas"); ic.width = size; ic.height = size;
         ic.getContext("2d").drawImage(src, 0, 0, size, size);
-        ic.toBlob(function (png) {
-          png.arrayBuffer().then(function (buf) { renderResult(buildIco(new Uint8Array(buf), size, size), "ico", onSuccess); });
-        }, "image/png");
-        return;
+        return new Promise(function (res, rej) {
+          ic.toBlob(function (png) {
+            if (!png) return rej(new Error("Couldn't encode ICO."));
+            png.arrayBuffer().then(function (buf) { res({ blob: buildIco(new Uint8Array(buf), size, size), ext: "ico" }); });
+          }, "image/png");
+        });
       }
       var c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
       var ctx = c.getContext("2d");
       if (mime === "image/jpeg" || mime === "application/pdf") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height); }
       ctx.drawImage(src, 0, 0);
       if (mime === "application/pdf") {
-        c.toBlob(function (jpg) {
-          if (!jpg) { resultBox.textContent = "Couldn't render the PDF."; return; }
-          jpg.arrayBuffer().then(function (buf) { renderResult(buildImagePdf(new Uint8Array(buf), c.width, c.height), "pdf", onSuccess); });
-        }, "image/jpeg", quality);
-        return;
+        return new Promise(function (res, rej) {
+          c.toBlob(function (jpg) {
+            if (!jpg) return rej(new Error("Couldn't render the PDF."));
+            jpg.arrayBuffer().then(function (buf) { res({ blob: buildImagePdf(new Uint8Array(buf), c.width, c.height), ext: "pdf" }); });
+          }, "image/jpeg", quality);
+        });
       }
-      c.toBlob(function (blob) {
-        if (!blob) { resultBox.textContent = "Your browser couldn't encode that format. Try PNG or JPG."; return; }
-        renderResult(blob, extFor(mime), onSuccess);
-      }, mime, quality);
-    }).catch(function (e) { browserFail(e, onSuccess); });
+      return new Promise(function (res, rej) {
+        c.toBlob(function (blob) {
+          if (!blob) return rej(new Error("Your browser couldn't encode that format. Try PNG or JPG."));
+          res({ blob: blob, ext: extFor(mime) });
+        }, mime, quality);
+      });
+    });
+  }
+  function convertImage(onSuccess) {
+    var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
+    var nm = (currentFile.name || "").toLowerCase();
+    var isHeic = /\.(heic|heif)$/.test(nm) || (currentFile.type || "").indexOf("heic") !== -1;
+    showProgress(isHeic ? "Decoding HEIC… (large photos can take 10–30s)" : "Converting…", false);
+    imageFileToBlob(currentFile, mime, quality)
+      .then(function (out) { renderResult(out.blob, out.ext, onSuccess); })
+      .catch(function (e) { browserFail(e, onSuccess); });
   }
 
   /* ---------- spreadsheet converter (XLSX/XLS/ODS/CSV ⇄ CSV/XLSX, in-browser) ---------- */
