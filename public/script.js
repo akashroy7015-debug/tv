@@ -584,11 +584,19 @@
     formatSelect.innerHTML = "";
     c.formats.forEach(function (f) { var o = document.createElement("option"); o.value = f[0]; o.textContent = f[1]; formatSelect.appendChild(o); });
     catNote.hidden = !c.note; catNote.textContent = c.note ? "ℹ️ " + c.note : "";
-    qualityWrap.style.display = c.engine === "image" ? "" : "none";
+    updateQualityVisibility();
     currentFile = null; currentImage = null; convertBtn.disabled = true;
     previewWrap.hidden = true; resultBox.textContent = "Convert to see the output here.";
   }
+  // Quality only affects lossy outputs (JPG, WebP, and the JPEG inside a PDF).
+  // PNG/ICO are lossless, so hide the slider for them to avoid confusion.
+  function updateQualityVisibility() {
+    var lossy = { "image/jpeg": 1, "image/webp": 1, "application/pdf": 1 };
+    var show = CATS[currentCat].engine === "image" && lossy[formatSelect.value];
+    qualityWrap.style.display = show ? "" : "none";
+  }
   catTabs.addEventListener("click", function (e) { var t = e.target.closest(".cat-tab"); if (t) applyCategory(t.getAttribute("data-cat")); });
+  formatSelect.addEventListener("change", updateQualityVisibility);
 
   /* ---------- file handling ---------- */
   var currentFile = null, currentImage = null, currentName = "file";
