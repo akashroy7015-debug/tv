@@ -51,7 +51,10 @@
       note: "DOCX→HTML/TXT and PDF→PNG/JPG run in your browser. DOCX↔PDF and EPUB→PDF use our conversion server." },
     email: { accept: ".eml,.msg,.mbox", engine: "email", hint: "EML · MSG · MBOX → PDF / HTML",
       formats: [["pdf", "PDF"], ["html", "HTML"]],
-      note: "Email files (EML · MSG · MBOX) convert to PDF or HTML on our secure server." }
+      note: "Email files (EML · MSG · MBOX) convert to PDF or HTML on our secure server." },
+    ocr: { accept: "image/*,.pdf,.png,.jpg,.jpeg,.webp,.bmp", engine: "ocr", hint: "Image · scanned PDF → extract editable text",
+      formats: [["txt", "TXT"]],
+      note: "Extracts text from images and scanned PDFs — privately, in your browser. First run downloads the OCR engine." }
   };
   var currentCat = "image";
 
@@ -740,7 +743,54 @@
     else if (engine === "ffmpeg") ffmpegConvert(onSuccess);
     else if (engine === "document") convertDocument(onSuccess);
     else if (engine === "email") serverConvertFile(onSuccess);
+    else if (engine === "ocr") ocrConvert(onSuccess);
     else comingSoon();
+  }
+
+  /* ---------- OCR (image / scanned PDF → editable text, in-browser) ---------- */
+  function ocrConvert(onSuccess) {
+    var nm = (currentFile.name || "").toLowerCase();
+    var isPdf = /\.pdf$/.test(nm) || currentFile.type === "application/pdf";
+    var prog = showProgress("Loading OCR engine… (downloads once)", true);
+    function recognize(img) {
+      return window.Tesseract.recognize(img, "eng", {
+        logger: function (m) {
+          if (m.status === "recognizing text") { prog.setPercent(Math.round((m.progress || 0) * 100)); prog.setLabel("Reading text… " + Math.round((m.progress || 0) * 100) + "%"); }
+          else if (m.status) { prog.setLabel(m.status); }
+        }
+      }).then(function (r) { return r.data.text; });
+    }
+    loadLib("https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js", "Tesseract").then(function () {
+      if (!isPdf) return recognize(currentFile).then(function (t) { finishOcr(t, onSuccess); });
+      return loadLib("https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js", "pdfjsLib").then(function () {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        return currentFile.arrayBuffer();
+      }).then(function (buf) { return window.pdfjsLib.getDocument({ data: buf }).promise; }).then(function (pdf) {
+        var all = "", chain = Promise.resolve();
+        for (var n = 1; n <= pdf.numPages; n++) (function (n) {
+          chain = chain.then(function () { return pdf.getPage(n); }).then(function (page) {
+            var vp = page.getViewport({ scale: 2 });
+            var c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+            return page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise.then(function () {
+              prog.setLabel("Reading page " + n + " / " + pdf.numPages + "…"); return recognize(c);
+            }).then(function (t) { all += (n > 1 ? "\n\n" : "") + "--- Page " + n + " ---\n" + t; });
+          });
+        })(n);
+        return chain.then(function () { finishOcr(all.trim(), onSuccess); });
+      });
+    }).catch(function (e) { resultBox.textContent = "OCR failed: " + (e && e.message ? e.message : e); });
+  }
+  function finishOcr(text, onSuccess) {
+    text = text || "";
+    var blob = new Blob([text], { type: "text/plain" });
+    resultBox.innerHTML = "";
+    var icon = document.createElement("div"); icon.style.fontSize = "2.2rem"; icon.textContent = "🔤";
+    var pre = document.createElement("textarea"); pre.value = text || "(No text detected — try a clearer scan.)"; pre.readOnly = true;
+    pre.style.cssText = "width:100%;min-height:120px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-size:.85rem;resize:vertical;margin:8px 0";
+    var meta = document.createElement("small"); meta.textContent = "TXT · " + humanSize(blob.size);
+    var dl = document.createElement("a"); dl.href = URL.createObjectURL(blob); dl.download = currentName + ".txt"; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download .txt";
+    resultBox.appendChild(icon); resultBox.appendChild(pre); resultBox.appendChild(meta); resultBox.appendChild(dl);
+    if (typeof onSuccess === "function") onSuccess();
   }
   /* ---------- lazy script loader (for HEIC/TIFF/spreadsheet libraries) ---------- */
   var _libs = {};
