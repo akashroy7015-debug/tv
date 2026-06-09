@@ -88,21 +88,21 @@
   function applyMemberCopy(paid) {
     if (paid) {
       var lede = $("heroLede");
-      if (lede) lede.innerHTML = "Convert <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more — directly in your browser. "
-        + "Private, fast, and unlimited on your plan. Image &amp; PDF conversions never leave your device.";
+      if (lede) lede.innerHTML = "FileMorph converts <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more right in your browser. "
+        + "Your files are <strong>never uploaded</strong> — private by design, and unlimited on your plan.";
       setText("heroCta", "Open the converter");
       var trust = $("heroTrust");
-      if (trust) trust.innerHTML = "<li>👑 Premium member</li><li>✓ Every format unlocked</li><li>✓ Priority processing</li>";
+      if (trust) trust.innerHTML = "<li>👑 Premium member</li><li>🔒 Files never uploaded</li><li>✓ Every format unlocked</li>";
       setText("ctaTitle", "Welcome back — let's convert.");
       setText("ctaText", "Your premium tools are ready. Drop a file and go.");
       setText("ctaBtn", "Open the converter");
     } else {
       var lede0 = $("heroLede");
-      if (lede0) lede0.innerHTML = "Convert <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more — directly in your browser. "
-        + "Private, fast, and free to start. Image &amp; PDF conversions never leave your device.";
+      if (lede0) lede0.innerHTML = "FileMorph converts <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more right in your browser. "
+        + "Your images and documents are <strong>never uploaded to a server</strong> — private by design, fast, and free to start.";
       setText("heroCta", "Start converting free");
       var trust0 = $("heroTrust");
-      if (trust0) trust0.innerHTML = "<li>✓ First conversions free</li><li>✓ No software to install</li><li>✓ Private in-browser images</li>";
+      if (trust0) trust0.innerHTML = "<li>🔒 Files never uploaded</li><li>✓ First conversions free</li><li>✓ Works on any device</li>";
       setText("ctaTitle", "Convert your first file in seconds.");
       setText("ctaText", "No download, no account to start — just drop a file and go.");
       setText("ctaBtn", "Start converting free");
