@@ -119,6 +119,8 @@ h1, h2, h3, h4 { line-height: 1.15; font-weight: 700; }
 .lede strong { color: var(--text); }
 .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
 .hero-trust { list-style: none; display: flex; gap: 22px; flex-wrap: wrap; color: var(--muted); font-size: 0.9rem; }
+.hero-micro { color: var(--muted); font-size: 0.85rem; margin: -12px 0 22px; }
+.hero-micro::before { content: "✓ "; color: var(--accent-2); font-weight: 700; }
 
 /* Hero card / window mock */
 .window {
