@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js"></script>
+  <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js"></script>
+  <script async src="//www.ezojs.com/ezoic/sa.min.js"></script>
+  <script>window.ezstandalone = window.ezstandalone || {}; ezstandalone.cmd = ezstandalone.cmd || [];</script>
+  <script src="//ezoicanalytics.com/analytics.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18223944386"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", "AW-18223944386");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free PDF Tools — Merge, Split &amp; Compress PDF (Private, No Upload) | FileMorph</title>
+  <meta name="description" content="Free private PDF tools: merge multiple PDFs, split or extract pages, and compress PDF size — all in your browser. Your files are never uploaded." />
+  <link rel="canonical" href="https://filemorph.shop/pdf-tools.html" />
+  <meta property="og:title" content="Free PDF Tools — Merge, Split & Compress PDF | FileMorph" />
+  <meta property="og:description" content="Merge, split and compress PDFs privately in your browser — never uploaded." />
+  <meta property="og:image" content="https://filemorph.shop/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css?v=13" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container nav">
+      <a href="/" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="34" height="34" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="/#convert">Convert</a>
+        <a href="/pdf-tools.html">PDF Tools</a>
+        <a href="/#plans">Plans</a>
+        <a href="/guides.html">Guides</a>
+      </nav>
+      <a href="/" class="btn btn-ghost btn-sm" style="margin-left:auto">← Back to converter</a>
+    </div>
+  </header>
+
+  <section class="section" id="pdftools">
+    <div class="container">
+      <div class="section-head">
+        <h1>Free PDF Tools</h1>
+        <p>Merge, split and compress PDFs — <strong>100% in your browser</strong>. Your files are never uploaded.</p>
+      </div>
+
+      <div id="pdfAd" style="text-align:center;margin:0 auto 24px"></div>
+      <script>ezstandalone.cmd.push(function () { ezstandalone.showAds(101); });</script>
+
+      <!-- Merge -->
+      <div class="converter" style="margin-bottom:26px">
+        <h2 style="margin-top:0">🔗 Merge PDFs</h2>
+        <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Combine several PDF files into one, in the order you pick them.</p>
+        <input type="file" id="mergeInput" accept="application/pdf,.pdf" multiple />
+        <div class="demo-controls" style="margin-top:14px">
+          <button class="btn btn-primary" id="mergeBtn" disabled>Merge PDFs</button>
+        </div>
+        <div id="mergeResult" class="result-box" style="margin-top:14px">Select 2+ PDF files to merge.</div>
+      </div>
+
+      <!-- Split -->
+      <div class="converter" style="margin-bottom:26px">
+        <h2 style="margin-top:0">✂️ Split / Extract Pages</h2>
+        <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Pull out specific pages, or split every page into its own PDF (ZIP).</p>
+        <input type="file" id="splitInput" accept="application/pdf,.pdf" />
+        <div class="demo-controls" style="margin-top:14px;flex-wrap:wrap;gap:10px">
+          <label style="flex:1;min-width:180px">Pages to extract
+            <input type="text" id="splitRange" placeholder="e.g. 1-3, 5, 8-10" />
+          </label>
+          <button class="btn btn-primary" id="splitBtn" disabled>Extract pages</button>
+          <button class="btn btn-ghost" id="splitAllBtn" disabled>Split every page (ZIP)</button>
+        </div>
+        <div id="splitResult" class="result-box" style="margin-top:14px">Select a PDF, then choose pages.</div>
+      </div>
+
+      <!-- Compress -->
+      <div class="converter">
+        <h2 style="margin-top:0">🗜️ Compress PDF</h2>
+        <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Shrink a PDF's size. Best for <strong>scanned / image-heavy</strong> PDFs — pages are re-rendered at the quality you choose.</p>
+        <input type="file" id="compressInput" accept="application/pdf,.pdf" />
+        <div class="demo-controls" style="margin-top:14px;flex-wrap:wrap;gap:10px">
+          <label style="flex:1;min-width:180px">Quality <span id="compQVal">70%</span>
+            <input type="range" id="compQ" min="30" max="95" value="70" />
+          </label>
+          <button class="btn btn-primary" id="compressBtn" disabled>Compress PDF</button>
+        </div>
+        <div id="compressResult" class="result-box" style="margin-top:14px">Select a PDF to compress.</div>
+        <p style="color:var(--muted);font-size:.8rem;margin-top:10px">Note: compression re-renders pages as images, so text becomes non-selectable. Ideal for scans; for text PDFs, keep the original.</p>
+      </div>
+
+      <p style="text-align:center;color:var(--muted);margin-top:24px">
+        Need to convert a file instead? <a href="/#convert" style="color:var(--accent-2)">Open the converter →</a>
+      </p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom footer-links">
+      <a href="/">Home</a> · <a href="/pdf-tools.html">PDF Tools</a> · <a href="/guides.html">Guides</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a>
+      <p style="margin-top:8px">Need help? <a href="mailto:support@filemorph.shop" style="color:var(--accent-2)">support@filemorph.shop</a></p>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    var PDFLIB = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
+    var JSZIPLIB = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+    var PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+    var libs = {};
+    function loadLib(url, g) {
+      if (window[g]) return Promise.resolve(window[g]);
+      if (libs[url]) return libs[url];
+      libs[url] = new Promise(function (res, rej) {
+        var s = document.createElement("script"); s.src = url;
+        s.onload = function () { res(window[g]); }; s.onerror = function () { rej(new Error("Couldn't load a required library.")); };
+        document.head.appendChild(s);
+      });
+      return libs[url];
+    }
+    function $(id) { return document.getElementById(id); }
+    function human(b) { if (b < 1024) return b + " B"; if (b < 1048576) return (b / 1024).toFixed(1) + " KB"; return (b / 1048576).toFixed(2) + " MB"; }
+    function show(box, blob, name, label) {
+      var url = URL.createObjectURL(blob); box.innerHTML = "";
+      var i = document.createElement("div"); i.style.fontSize = "2.2rem"; i.textContent = "✅";
+      var m = document.createElement("small"); m.textContent = (label || name) + " · " + human(blob.size);
+      var a = document.createElement("a"); a.href = url; a.download = name; a.className = "btn btn-primary btn-sm"; a.textContent = "Download";
+      box.appendChild(i); box.appendChild(m); box.appendChild(a);
+    }
+    function busy(box, t) { box.textContent = t || "Working…"; }
+    function fail(box, e) { box.textContent = "Failed: " + (e && e.message ? e.message : e); }
+
+    // ----- Merge -----
+    var mergeFiles = [];
+    $("mergeInput").addEventListener("change", function () {
+      mergeFiles = Array.prototype.slice.call(this.files);
+      $("mergeBtn").disabled = mergeFiles.length < 2;
+      $("mergeResult").textContent = mergeFiles.length ? mergeFiles.length + " PDF(s) selected — they'll merge in this order." : "Select 2+ PDF files to merge.";
+    });
+    $("mergeBtn").addEventListener("click", function () {
+      var box = $("mergeResult"); busy(box, "Merging…");
+      loadLib(PDFLIB, "PDFLib").then(function () {
+        return PDFLib.PDFDocument.create().then(function (out) {
+          var chain = Promise.resolve();
+          mergeFiles.forEach(function (f) {
+            chain = chain.then(function () { return f.arrayBuffer(); })
+              .then(function (buf) { return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); })
+              .then(function (src) { return out.copyPages(src, src.getPageIndices()); })
+              .then(function (pages) { pages.forEach(function (p) { out.addPage(p); }); });
+          });
+          return chain.then(function () { return out.save(); }).then(function (bytes) {
+            show(box, new Blob([bytes], { type: "application/pdf" }), "merged.pdf", "Merged " + mergeFiles.length + " PDFs");
+          });
+        });
+      }).catch(function (e) { fail(box, e); });
+    });
+
+    // ----- Split -----
+    var splitFile = null;
+    $("splitInput").addEventListener("change", function () {
+      splitFile = this.files[0] || null;
+      $("splitBtn").disabled = !splitFile; $("splitAllBtn").disabled = !splitFile;
+      $("splitResult").textContent = splitFile ? "Loaded. Enter pages (e.g. 1-3, 5) or split every page." : "Select a PDF, then choose pages.";
+    });
+    function parseRange(str, max) {
+      var out = [], parts = (str || "").split(",");
+      parts.forEach(function (p) {
+        p = p.trim(); if (!p) return;
+        var m = p.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (m) { for (var i = +m[1]; i <= +m[2]; i++) if (i >= 1 && i <= max) out.push(i - 1); }
+        else { var n = parseInt(p, 10); if (n >= 1 && n <= max) out.push(n - 1); }
+      });
+      return out;
+    }
+    $("splitBtn").addEventListener("click", function () {
+      var box = $("splitResult"); if (!splitFile) return; busy(box, "Extracting…");
+      loadLib(PDFLIB, "PDFLib").then(function () { return splitFile.arrayBuffer(); })
+        .then(function (buf) { return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); })
+        .then(function (src) {
+          var idx = parseRange($("splitRange").value, src.getPageCount());
+          if (!idx.length) { box.textContent = "Enter valid pages, e.g. 1-3, 5 (this PDF has " + src.getPageCount() + " pages)."; return; }
+          return PDFLib.PDFDocument.create().then(function (out) {
+            return out.copyPages(src, idx).then(function (pages) {
+              pages.forEach(function (p) { out.addPage(p); });
+              return out.save();
+            }).then(function (bytes) { show(box, new Blob([bytes], { type: "application/pdf" }), "extracted.pdf", "Extracted " + idx.length + " page(s)"); });
+          });
+        }).catch(function (e) { fail(box, e); });
+    });
+    $("splitAllBtn").addEventListener("click", function () {
+      var box = $("splitResult"); if (!splitFile) return; busy(box, "Splitting every page…");
+      Promise.all([loadLib(PDFLIB, "PDFLib"), loadLib(JSZIPLIB, "JSZip")]).then(function () { return splitFile.arrayBuffer(); })
+        .then(function (buf) { return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); })
+        .then(function (src) {
+          var n = src.getPageCount(), zip = new JSZip(), chain = Promise.resolve();
+          for (var i = 0; i < n; i++) (function (i) {
+            chain = chain.then(function () { return PDFLib.PDFDocument.create(); })
+              .then(function (out) { return out.copyPages(src, [i]).then(function (pg) { out.addPage(pg[0]); return out.save(); }); })
+              .then(function (bytes) { zip.file("page-" + (i + 1) + ".pdf", bytes); });
+          })(i);
+          return chain.then(function () { return zip.generateAsync({ type: "blob" }); })
+            .then(function (zb) { show(box, zb, "pages.zip", n + " pages split"); });
+        }).catch(function (e) { fail(box, e); });
+    });
+
+    // ----- Compress (rasterize via pdf.js, rebuild via pdf-lib) -----
+    var compFile = null;
+    $("compQ").addEventListener("input", function () { $("compQVal").textContent = this.value + "%"; });
+    $("compressInput").addEventListener("change", function () {
+      compFile = this.files[0] || null;
+      $("compressBtn").disabled = !compFile;
+      $("compressResult").textContent = compFile ? "Loaded (" + human(compFile.size) + "). Pick quality and compress." : "Select a PDF to compress.";
+    });
+    $("compressBtn").addEventListener("click", function () {
+      var box = $("compressResult"); if (!compFile) return; busy(box, "Compressing… (rendering pages)");
+      var q = parseInt($("compQ").value, 10) / 100;
+      var origSize = compFile.size;
+      Promise.all([loadLib(PDFLIB, "PDFLib"), loadLib(PDFJS, "pdfjsLib")]).then(function () {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+        return compFile.arrayBuffer();
+      }).then(function (buf) {
+        return window.pdfjsLib.getDocument({ data: buf }).promise.then(function (pdf) {
+          return PDFLib.PDFDocument.create().then(function (out) {
+            var chain = Promise.resolve();
+            for (var n = 1; n <= pdf.numPages; n++) (function (n) {
+              chain = chain.then(function () { return pdf.getPage(n); }).then(function (page) {
+                var vp = page.getViewport({ scale: 1.5 });
+                var c = document.createElement("canvas"); c.width = vp.width; c.height = vp.height;
+                var ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+                return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function () {
+                  return new Promise(function (res) { c.toBlob(res, "image/jpeg", q); });
+                }).then(function (blob) { return blob.arrayBuffer(); }).then(function (jbuf) {
+                  return out.embedJpg(jbuf).then(function (img) {
+                    var p = out.addPage([c.width, c.height]); p.drawImage(img, { x: 0, y: 0, width: c.width, height: c.height });
+                  });
+                });
+                busy(box, "Compressing… page " + n + "/" + pdf.numPages);
+              });
+            })(n);
+            return chain.then(function () { return out.save(); });
+          });
+        });
+      }).then(function (bytes) {
+        var blob = new Blob([bytes], { type: "application/pdf" });
+        var saved = origSize > 0 ? Math.max(0, Math.round((1 - blob.size / origSize) * 100)) : 0;
+        show(box, blob, "compressed.pdf", "Compressed · " + saved + "% smaller (" + human(origSize) + " → " + human(blob.size) + ")");
+      }).catch(function (e) { fail(box, e); });
+    });
+  })();
+  </script>
+</body>
+</html>
