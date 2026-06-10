@@ -17,7 +17,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <meta name="theme-color" content="#0c0d14" />
-  <link rel="stylesheet" href="styles.css?v=24" />
+  <link rel="stylesheet" href="styles.css?v=25" />
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"FileMorph PDF Tools","applicationCategory":"UtilitiesApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free private PDF tools — merge, split and compress PDFs in your browser, never uploaded."}</script>
 </head>
 <body>
@@ -26,7 +26,7 @@
       <a href="/" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="34" height="34" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
       <nav class="nav-links" aria-label="Primary">
         <a href="/#convert">Convert</a>
-        <a href="/pdf-tools.html">PDF Tools</a>
+        <span class="nav-dd"><a href="/pdf-tools.html">PDF Tools</a><div class="nav-menu"><a href="/pdf-tools.html#merge">Merge PDF</a><a href="/pdf-tools.html#split">Split / Extract</a><a href="/pdf-tools.html#compress">Compress</a><a href="/pdf-tools.html#rotate">Rotate</a><a href="/pdf-tools.html#delete">Delete pages</a><a href="/pdf-tools.html#organize">Organize / Reorder</a><a href="/pdf-tools.html#numbers">Page numbers</a><a href="/pdf-tools.html#watermark">Watermark</a><a href="/pdf-tools.html#crop">Crop</a><a href="/pdf-tools.html#sign">Sign</a><a href="/pdf-tools.html#tojpg">PDF → JPG</a></div></span>
         <a href="/qr-code-generator.html">QR Code</a>
         <a href="/#plans">Plans</a>
         <a href="/guides.html">Guides</a>
@@ -44,8 +44,12 @@
 
       <div id="pdfAd" style="text-align:center;margin:0 auto 24px"></div>
 
+      <div class="toolchips">
+        <a href="#merge">Merge</a><a href="#split">Split</a><a href="#compress">Compress</a><a href="#rotate">Rotate</a><a href="#delete">Delete</a><a href="#organize">Organize</a><a href="#numbers">Page #s</a><a href="#watermark">Watermark</a><a href="#crop">Crop</a><a href="#sign">Sign</a><a href="#tojpg">PDF→JPG</a>
+      </div>
+
       <!-- Merge -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="merge" style="margin-bottom:26px">
         <h2 style="margin-top:0">🔗 Merge PDFs</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Combine several PDF files into one, in the order you pick them.</p>
         <input type="file" id="mergeInput" accept="application/pdf,.pdf" multiple />
@@ -56,7 +60,7 @@
       </div>
 
       <!-- Split -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="split" style="margin-bottom:26px">
         <h2 style="margin-top:0">✂️ Split / Extract Pages</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Pull out specific pages, or split every page into its own PDF (ZIP).</p>
         <input type="file" id="splitInput" accept="application/pdf,.pdf" />
@@ -71,7 +75,7 @@
       </div>
 
       <!-- Compress -->
-      <div class="converter">
+      <div class="converter" id="compress">
         <h2 style="margin-top:0">🗜️ Compress PDF</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Shrink a PDF's size. Best for <strong>scanned / image-heavy</strong> PDFs — pages are re-rendered at the quality you choose.</p>
         <input type="file" id="compressInput" accept="application/pdf,.pdf" />
@@ -86,7 +90,7 @@
       </div>
 
       <!-- Rotate -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="rotate" style="margin-bottom:26px">
         <h2 style="margin-top:0">🔄 Rotate PDF</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Rotate every page of a PDF.</p>
         <input type="file" id="rotInput" accept="application/pdf,.pdf" />
@@ -100,7 +104,7 @@
       </div>
 
       <!-- Delete pages -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="delete" style="margin-bottom:26px">
         <h2 style="margin-top:0">🗑️ Delete Pages</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Remove specific pages from a PDF.</p>
         <input type="file" id="delInput" accept="application/pdf,.pdf" />
@@ -114,7 +118,7 @@
       </div>
 
       <!-- Reorder / Organize -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="organize" style="margin-bottom:26px">
         <h2 style="margin-top:0">🔢 Organize / Reorder Pages</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Rearrange pages into a new order (and drop any you leave out).</p>
         <input type="file" id="ordInput" accept="application/pdf,.pdf" />
@@ -128,7 +132,7 @@
       </div>
 
       <!-- Page numbers -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="numbers" style="margin-bottom:26px">
         <h2 style="margin-top:0">#️⃣ Add Page Numbers</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Stamp page numbers along the bottom of every page.</p>
         <input type="file" id="numInput" accept="application/pdf,.pdf" />
@@ -142,7 +146,7 @@
       </div>
 
       <!-- Watermark -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="watermark" style="margin-bottom:26px">
         <h2 style="margin-top:0">💧 Watermark PDF</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Add a diagonal text watermark across every page.</p>
         <input type="file" id="wmInput" accept="application/pdf,.pdf" />
@@ -156,7 +160,7 @@
       </div>
 
       <!-- Crop -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="crop" style="margin-bottom:26px">
         <h2 style="margin-top:0">✂️ Crop PDF (trim margins)</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Trim white margins off every page by a percentage of each side.</p>
         <input type="file" id="cropInput" accept="application/pdf,.pdf" />
@@ -171,7 +175,7 @@
       </div>
 
       <!-- Sign -->
-      <div class="converter" style="margin-bottom:26px">
+      <div class="converter" id="sign" style="margin-bottom:26px">
         <h2 style="margin-top:0">✍️ Sign PDF (stamp signature)</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Place a signature image (PNG/JPG — a transparent PNG looks best) onto a page.</p>
         <label style="display:block;font-size:.85rem;color:var(--muted)">PDF<input type="file" id="signPdfInput" accept="application/pdf,.pdf" style="margin-top:4px" /></label>
@@ -187,7 +191,7 @@
       </div>
 
       <!-- PDF to JPG -->
-      <div class="converter">
+      <div class="converter" id="tojpg">
         <h2 style="margin-top:0">🖼️ PDF to JPG</h2>
         <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Turn each page into a JPG image (downloaded as a ZIP).</p>
         <input type="file" id="p2jInput" accept="application/pdf,.pdf" />

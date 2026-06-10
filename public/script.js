@@ -730,6 +730,18 @@
         .then(function (zb) { renderBatchResult(zb, ok, failed); });
     }).catch(function (e) { resultBox.textContent = "Batch failed: " + (e && e.message ? e.message : e); });
   }
+  // "Related tools" panel shown after a result, tailored to what was just converted.
+  function relatedTools() {
+    var links = [];
+    var cat = currentCat;
+    if (cat === "image") links = [["/image-resizer.html", "Resize image"], ["/pdf-tools.html", "Images → PDF tools"], ["/qr-code-generator.html", "QR code"]];
+    else if (cat === "document") links = [["/pdf-tools.html#merge", "Merge PDF"], ["/pdf-tools.html#split", "Split PDF"], ["/pdf-tools.html#compress", "Compress PDF"]];
+    else if (cat === "ocr") links = [["/pdf-tools.html", "PDF tools"], ["/#convert", "Convert a file"]];
+    else links = [["/pdf-tools.html", "PDF tools"], ["/image-resizer.html", "Image resizer"], ["/qr-code-generator.html", "QR code"]];
+    var d = document.createElement("div"); d.className = "related-tools";
+    d.innerHTML = "<span>Related tools:</span> " + links.map(function (l) { return '<a href="' + l[0] + '">' + l[1] + "</a>"; }).join(" · ");
+    return d;
+  }
   function renderBatchResult(blob, ok, failed) {
     var url = URL.createObjectURL(blob);
     resultBox.innerHTML = "";
@@ -737,7 +749,7 @@
     var meta = document.createElement("small");
     meta.textContent = ok + " file" + (ok === 1 ? "" : "s") + " converted · " + humanSize(blob.size) + (failed.length ? " · " + failed.length + " failed" : "");
     var dl = document.createElement("a"); dl.href = url; dl.download = "filemorph-batch.zip"; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ZIP";
-    resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
+    resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl); resultBox.appendChild(relatedTools());
   }
   function doConvert(onSuccess) {
     var engine = CATS[currentCat].engine;
@@ -792,7 +804,7 @@
     pre.style.cssText = "width:100%;min-height:120px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-size:.85rem;resize:vertical;margin:8px 0";
     var meta = document.createElement("small"); meta.textContent = "TXT · " + humanSize(blob.size);
     var dl = document.createElement("a"); dl.href = URL.createObjectURL(blob); dl.download = currentName + ".txt"; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download .txt";
-    resultBox.appendChild(icon); resultBox.appendChild(pre); resultBox.appendChild(meta); resultBox.appendChild(dl);
+    resultBox.appendChild(icon); resultBox.appendChild(pre); resultBox.appendChild(meta); resultBox.appendChild(dl); resultBox.appendChild(relatedTools());
     if (typeof onSuccess === "function") onSuccess();
   }
   /* ---------- lazy script loader (for HEIC/TIFF/spreadsheet libraries) ---------- */
@@ -990,7 +1002,7 @@
           var meta = document.createElement("small"); meta.textContent = fmt.toUpperCase() + " · " + humanSize(blob.size);
           var dl = document.createElement("a");
           dl.href = url; dl.download = currentName + "." + fmt; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + fmt;
-          resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl);
+          resultBox.appendChild(icon); resultBox.appendChild(meta); resultBox.appendChild(dl); resultBox.appendChild(relatedTools());
           if (typeof onSuccess === "function") onSuccess();
         });
     }).catch(function (e) {
@@ -1130,7 +1142,7 @@
     }
     var meta = document.createElement("small"); meta.textContent = ext.toUpperCase() + " · " + humanSize(blob.size);
     var dl = document.createElement("a"); dl.href = url; dl.download = currentName + "." + ext; dl.className = "btn btn-primary btn-sm"; dl.textContent = "Download ." + ext;
-    resultBox.appendChild(meta); resultBox.appendChild(dl);
+    resultBox.appendChild(meta); resultBox.appendChild(dl); resultBox.appendChild(relatedTools());
     if (typeof onSuccess === "function") onSuccess();
   }
   function buildImagePdf(jpeg, w, h) {
