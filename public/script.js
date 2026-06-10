@@ -115,7 +115,10 @@
   /* ---------- account UI ---------- */
   function renderAccount() {
     var u = getUser();
-    applyMemberCopy(isPaid());
+    var paidNow0 = isPaid();
+    applyMemberCopy(paidNow0);
+    // Shared flag so ad scripts on every page can skip ads for paying members.
+    try { localStorage.setItem("fm_paid", paidNow0 ? "1" : "0"); } catch (e) {}
     navAccount.innerHTML = "";
     if (u) {
       var c = B.credits ? (B.credits() || 0) : 0;
