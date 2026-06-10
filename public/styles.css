@@ -588,8 +588,8 @@ img, canvas, video, textarea, table { max-width: 100%; }
 .nav-account { flex-wrap: wrap; gap: 8px; }
 /* Collapse the link list into the ☰ menu earlier so the account area always fits */
 @media (max-width: 1024px) {
-  .site-header .nav-links { display: none; }
-  .site-header .nav-toggle { display: block; }
-  .site-header .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 66px; left: 0; right: 0;
+  .site-header:has(.nav-toggle) .nav-links { display: none; }
+  .site-header:has(.nav-toggle) .nav-toggle { display: block; }
+  .site-header:has(.nav-toggle) .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 66px; left: 0; right: 0;
     background: var(--bg-alt); border-bottom: 1px solid var(--border); padding: 14px 24px; gap: 12px; z-index: 55; }
 }
