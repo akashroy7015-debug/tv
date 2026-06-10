@@ -125,8 +125,9 @@
       var paidNow = isPaid();
       var chip = document.createElement("span");
       chip.className = "account-chip" + (paidNow ? " premium" : "");
+      chip.title = u.email; // full email on hover
       chip.innerHTML = (paidNow ? "<span class='crown'>👑</span> " : "")
-        + "<strong>" + (paidNow ? u.plan : "Free") + "</strong> · " + u.email;
+        + "<strong>" + (paidNow ? u.plan : "Free") + "</strong> <span class='acct-email'>· " + u.email + "</span>";
       navAccount.appendChild(chip);
       var credChip = document.createElement("span");
       credChip.className = "account-chip credits-chip"; credChip.title = "Conversion credits";

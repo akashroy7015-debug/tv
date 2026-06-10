@@ -571,3 +571,9 @@ img, canvas, video, textarea, table { max-width: 100%; }
 .related-tools span { display: block; margin-bottom: 4px; }
 .related-tools a { color: var(--accent-2); }
 .related-tools a:hover { text-decoration: underline; }
+
+/* ===== Keep the account chip compact (long emails don't congest the nav) ===== */
+.nav-account { flex-wrap: wrap; justify-content: flex-end; }
+.account-chip { max-width: 100%; }
+.acct-email { display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+@media (max-width: 640px) { .acct-email { display: none; } }  /* show just 👑 Pro on small phones */
