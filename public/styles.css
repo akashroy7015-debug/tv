@@ -512,3 +512,37 @@ input[type=range] { accent-color: var(--accent); height: 6px; }
 .conv-bar { width: 100%; max-width: 240px; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .conv-bar > i { display: block; height: 100%; width: 0; background: var(--accent-grad); transition: width .2s ease; }
 .conv-label { font-size: .85rem; text-align: center; }
+
+/* ===== Mobile optimization (iOS + Android) ===== */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, canvas, video, textarea, table { max-width: 100%; }
+* { -webkit-tap-highlight-color: rgba(124,92,255,0.2); }
+
+@media (max-width: 880px) {
+  /* Tool/guide pages have no hamburger — keep their nav visible & wrapping */
+  .site-header:not(:has(.nav-toggle)) .nav-links { display: flex !important; flex-wrap: wrap; gap: 10px 16px; }
+  .nav { flex-wrap: wrap; height: auto; padding: 10px 0; gap: 10px 14px; }
+}
+
+@media (max-width: 540px) {
+  .container { padding: 0 16px; }
+  .section { padding: 52px 0; }
+  .hero { padding: 44px 0 32px; }
+  .hero h1 { font-size: 1.95rem; }
+  .section-head { margin-bottom: 30px; }
+  .section-head h2 { font-size: 1.55rem; }
+  .lede { font-size: 1.02rem; }
+  /* iOS zooms in on inputs <16px when focused — force 16px to stop the jump */
+  input, select, textarea, .demo-controls select { font-size: 16px !important; }
+  /* Bigger tap targets */
+  .btn { padding: 14px 22px; }
+  .btn-sm { padding: 11px 16px; }
+  /* Category tabs: smooth horizontal scroll instead of cramped wrapping */
+  .cat-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+  .cat-tab { flex: 0 0 auto; }
+  /* Comparison table fits small screens */
+  .compare th, .compare td { padding: 10px 10px; font-size: 0.8rem; }
+  /* Converter padding a touch tighter */
+  .converter { padding: 18px; }
+  .demo-controls { gap: 14px; }
+}
