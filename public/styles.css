@@ -577,3 +577,7 @@ img, canvas, video, textarea, table { max-width: 100%; }
 .account-chip { max-width: 100%; }
 .acct-email { display: inline-block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 @media (max-width: 640px) { .acct-email { display: none; } }  /* show just 👑 Pro on small phones */
+
+/* divider label inside the Tools dropdown */
+.nav-sep { padding: 8px 12px 4px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-2); border-top: 1px solid var(--border); margin-top: 4px; }
+@media (max-width: 880px) { .nav-sep { border-top: none; padding-left: 0; } }
