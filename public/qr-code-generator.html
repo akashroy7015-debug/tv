@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18223944386"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", "AW-18223944386");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free QR Code Generator — Make a QR Code (Private, No Upload) | FileMorph</title>
+  <meta name="description" content="Free QR code generator. Create a QR code for any link or text, customize size and colors, and download as PNG or SVG — generated privately in your browser." />
+  <link rel="canonical" href="https://filemorph.shop/qr-code-generator.html" />
+  <meta property="og:title" content="Free QR Code Generator — FileMorph" />
+  <meta property="og:description" content="Create and download QR codes (PNG/SVG) privately in your browser." />
+  <meta property="og:image" content="https://filemorph.shop/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="styles.css?v=19" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container nav">
+      <a href="/" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="34" height="34" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="/#convert">Convert</a>
+        <a href="/pdf-tools.html">PDF Tools</a>
+        <a href="/qr-code-generator.html">QR Code</a>
+        <a href="/#plans">Plans</a>
+        <a href="/guides.html">Guides</a>
+      </nav>
+      <a href="/" class="btn btn-ghost btn-sm" style="margin-left:auto">← Back to converter</a>
+    </div>
+  </header>
+
+  <section class="section" id="qr">
+    <div class="container">
+      <div class="section-head">
+        <h1>Free QR Code Generator</h1>
+        <p>Turn any link or text into a QR code — customizable, and <strong>generated in your browser</strong> (nothing uploaded).</p>
+      </div>
+
+      <div class="converter" style="max-width:720px">
+        <label style="display:block;margin-bottom:14px">Link or text
+          <textarea id="qrText" rows="3" placeholder="https://example.com  or any text…"
+            style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:0.95rem;resize:vertical;margin-top:6px"></textarea>
+        </label>
+
+        <div class="demo-controls" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
+          <label style="flex:1;min-width:150px">Size <span id="qrSizeVal">512px</span>
+            <input type="range" id="qrSize" min="128" max="1024" step="64" value="512" />
+          </label>
+          <label style="min-width:120px">Dark color
+            <input type="color" id="qrDark" value="#0d1117" style="width:100%;height:38px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px" />
+          </label>
+          <label style="min-width:120px">Background
+            <input type="color" id="qrLight" value="#ffffff" style="width:100%;height:38px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px" />
+          </label>
+          <button class="btn btn-primary" id="qrBtn">Generate</button>
+        </div>
+
+        <div id="qrResult" class="result-box" style="margin-top:18px;min-height:160px">Enter a link or text and hit Generate.</div>
+      </div>
+
+      <p style="text-align:center;color:var(--muted);margin-top:22px">
+        Need to convert a file? <a href="/#convert" style="color:var(--accent-2)">Open the converter →</a> ·
+        <a href="/pdf-tools.html" style="color:var(--accent-2)">PDF Tools →</a>
+      </p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom footer-links">
+      <a href="/">Home</a> · <a href="/qr-code-generator.html">QR Code</a> · <a href="/pdf-tools.html">PDF Tools</a> · <a href="/guides.html">Guides</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a>
+      <p style="margin-top:8px">Need help? <a href="mailto:support@filemorph.shop" style="color:var(--accent-2)">support@filemorph.shop</a></p>
+    </div>
+  </footer>
+
+  <script>
+  (function () {
+    var QRLIB = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
+    var loaded = null;
+    function load() {
+      if (window.QRCode) return Promise.resolve();
+      if (loaded) return loaded;
+      loaded = new Promise(function (res, rej) {
+        var s = document.createElement("script"); s.src = QRLIB;
+        s.onload = res; s.onerror = function () { rej(new Error("Couldn't load the QR library.")); };
+        document.head.appendChild(s);
+      });
+      return loaded;
+    }
+    function $(id) { return document.getElementById(id); }
+    $("qrSize").addEventListener("input", function () { $("qrSizeVal").textContent = this.value + "px"; });
+
+    function generate() {
+      var text = $("qrText").value.trim();
+      var box = $("qrResult");
+      if (!text) { box.textContent = "Enter a link or text first."; return; }
+      var size = parseInt($("qrSize").value, 10);
+      var opts = { width: size, margin: 2, color: { dark: $("qrDark").value, light: $("qrLight").value }, errorCorrectionLevel: "M" };
+      box.textContent = "Generating…";
+      load().then(function () {
+        var canvas = document.createElement("canvas");
+        window.QRCode.toCanvas(canvas, text, opts, function (err) {
+          if (err) { box.textContent = "Couldn't generate: " + err.message; return; }
+          window.QRCode.toString(text, { type: "svg", margin: 2, color: opts.color, errorCorrectionLevel: "M" }, function (e2, svg) {
+            box.innerHTML = "";
+            canvas.style.cssText = "max-width:280px;width:100%;height:auto;background:#fff;border-radius:10px;padding:8px";
+            var pngUrl = canvas.toDataURL("image/png");
+            var pngA = document.createElement("a"); pngA.href = pngUrl; pngA.download = "qr-code.png"; pngA.className = "btn btn-primary btn-sm"; pngA.textContent = "Download PNG";
+            var row = document.createElement("div"); row.style.cssText = "display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px";
+            row.appendChild(pngA);
+            if (!e2 && svg) {
+              var svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+              var svgA = document.createElement("a"); svgA.href = svgUrl; svgA.download = "qr-code.svg"; svgA.className = "btn btn-ghost btn-sm"; svgA.textContent = "Download SVG";
+              row.appendChild(svgA);
+            }
+            box.appendChild(canvas); box.appendChild(row);
+          });
+        });
+      }).catch(function (e) { box.textContent = "Error: " + e.message; });
+    }
+    $("qrBtn").addEventListener("click", generate);
+    $("qrText").addEventListener("keydown", function (e) { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate(); });
+  })();
+  </script>
+  <script src="https://pl29665868.effectivecpmnetwork.com/e8/88/19/e888192e4d5d4a0da1fe4b98935baf41.js"></script>
+  <script src="https://pl29665775.effectivecpmnetwork.com/30/a9/ac/30a9ac676ecbfd7e56e02ded7b5e3ac2.js"></script>
+</body>
+</html>
