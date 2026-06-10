@@ -581,3 +581,15 @@ img, canvas, video, textarea, table { max-width: 100%; }
 /* divider label inside the Tools dropdown */
 .nav-sep { padding: 8px 12px 4px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-2); border-top: 1px solid var(--border); margin-top: 4px; }
 @media (max-width: 880px) { .nav-sep { border-top: none; padding-left: 0; } }
+
+/* ===== Header never congests (robust) ===== */
+.nav { flex-wrap: wrap; height: auto; min-height: 66px; row-gap: 10px; column-gap: 18px; }
+.nav-links { gap: 18px; }
+.nav-account { flex-wrap: wrap; gap: 8px; }
+/* Collapse the link list into the ☰ menu earlier so the account area always fits */
+@media (max-width: 1024px) {
+  .site-header .nav-links { display: none; }
+  .site-header .nav-toggle { display: block; }
+  .site-header .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 66px; left: 0; right: 0;
+    background: var(--bg-alt); border-bottom: 1px solid var(--border); padding: 14px 24px; gap: 12px; z-index: 55; }
+}
