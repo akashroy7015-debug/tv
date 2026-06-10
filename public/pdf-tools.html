@@ -155,6 +155,37 @@
         <div id="wmResult" class="result-box" style="margin-top:14px">Select a PDF and type your watermark.</div>
       </div>
 
+      <!-- Crop -->
+      <div class="converter" style="margin-bottom:26px">
+        <h2 style="margin-top:0">✂️ Crop PDF (trim margins)</h2>
+        <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Trim white margins off every page by a percentage of each side.</p>
+        <input type="file" id="cropInput" accept="application/pdf,.pdf" />
+        <div class="demo-controls" style="margin-top:14px;flex-wrap:wrap;gap:10px">
+          <label style="width:80px">Top %<input type="number" id="cropT" min="0" max="45" value="5" /></label>
+          <label style="width:80px">Right %<input type="number" id="cropR" min="0" max="45" value="5" /></label>
+          <label style="width:80px">Bottom %<input type="number" id="cropB" min="0" max="45" value="5" /></label>
+          <label style="width:80px">Left %<input type="number" id="cropL" min="0" max="45" value="5" /></label>
+          <button class="btn btn-primary" id="cropBtn" disabled>Crop PDF</button>
+        </div>
+        <div id="cropResult" class="result-box" style="margin-top:14px">Select a PDF, then set margins to trim.</div>
+      </div>
+
+      <!-- Sign -->
+      <div class="converter" style="margin-bottom:26px">
+        <h2 style="margin-top:0">✍️ Sign PDF (stamp signature)</h2>
+        <p style="color:var(--muted);font-size:.92rem;margin-bottom:14px">Place a signature image (PNG/JPG — a transparent PNG looks best) onto a page.</p>
+        <label style="display:block;font-size:.85rem;color:var(--muted)">PDF<input type="file" id="signPdfInput" accept="application/pdf,.pdf" style="margin-top:4px" /></label>
+        <label style="display:block;font-size:.85rem;color:var(--muted);margin-top:10px">Signature image<input type="file" id="signImgInput" accept="image/png,image/jpeg,image/*" style="margin-top:4px" /></label>
+        <div class="demo-controls" style="margin-top:14px;flex-wrap:wrap;gap:10px">
+          <label style="width:110px">Page<input type="number" id="signPage" min="1" value="1" /></label>
+          <label style="min-width:150px">Position
+            <select id="signPos"><option value="br">Bottom right</option><option value="bl">Bottom left</option><option value="tr">Top right</option><option value="tl">Top left</option></select>
+          </label>
+          <button class="btn btn-primary" id="signBtn" disabled>Sign PDF</button>
+        </div>
+        <div id="signResult" class="result-box" style="margin-top:14px">Select a PDF and a signature image.</div>
+      </div>
+
       <!-- PDF to JPG -->
       <div class="converter">
         <h2 style="margin-top:0">🖼️ PDF to JPG</h2>
@@ -431,6 +462,46 @@
         return chain.then(function () { return zip.generateAsync({ type: "blob" }); })
           .then(function (zb) { show(box, zb, "pdf-images.zip", pdf.numPages + " page(s) → JPG"); });
       }).catch(function (e) { fail(box, e); });
+    });
+
+    // ----- Crop (trim margins) -----
+    var cropGet = pick("cropInput", "cropBtn", "cropResult", "Loaded. Set margins to trim.");
+    $("cropBtn").addEventListener("click", function () {
+      var f = cropGet(), box = $("cropResult"); if (!f) return; busy(box, "Cropping…");
+      var t = +$("cropT").value || 0, r = +$("cropR").value || 0, b = +$("cropB").value || 0, l = +$("cropL").value || 0;
+      loadLib(PDFLIB, "PDFLib").then(function () { return loadDoc(f); }).then(function (doc) {
+        doc.getPages().forEach(function (p) {
+          var w = p.getWidth(), h = p.getHeight();
+          var lx = w * l / 100, rx = w * r / 100, ty = h * t / 100, by = h * b / 100;
+          p.setCropBox(lx, by, Math.max(10, w - lx - rx), Math.max(10, h - ty - by));
+        });
+        return doc.save();
+      }).then(function (bytes) { dl(box, bytes, "cropped.pdf", "Margins trimmed"); }).catch(function (e) { fail(box, e); });
+    });
+
+    // ----- Sign (stamp a signature image) -----
+    var signPdf = null, signImg = null;
+    function toggleSign() { $("signBtn").disabled = !(signPdf && signImg); $("signResult").textContent = (signPdf && signImg) ? "Ready — stamp your signature." : "Select a PDF and a signature image."; }
+    $("signPdfInput").addEventListener("change", function () { signPdf = this.files[0] || null; toggleSign(); });
+    $("signImgInput").addEventListener("change", function () { signImg = this.files[0] || null; toggleSign(); });
+    $("signBtn").addEventListener("click", function () {
+      var box = $("signResult"); if (!(signPdf && signImg)) return; busy(box, "Signing…");
+      var pos = $("signPos").value, pageNo = parseInt($("signPage").value, 10) || 1;
+      loadLib(PDFLIB, "PDFLib").then(function () { return signPdf.arrayBuffer(); })
+        .then(function (buf) { return PDFLib.PDFDocument.load(buf, { ignoreEncryption: true }); })
+        .then(function (doc) {
+          return signImg.arrayBuffer().then(function (ib) {
+            var isPng = (signImg.type || "").indexOf("png") !== -1 || /\.png$/i.test(signImg.name || "");
+            return (isPng ? doc.embedPng(ib) : doc.embedJpg(ib)).then(function (img) {
+              var pages = doc.getPages(), idx = Math.min(Math.max(1, pageNo), pages.length) - 1, p = pages[idx];
+              var w = p.getWidth(), h = p.getHeight(), iw = Math.min(180, w * 0.3), ih = img.height * (iw / img.width), m = 24;
+              var x = pos.indexOf("l") !== -1 ? m : w - iw - m;
+              var y = pos.indexOf("t") !== -1 ? h - ih - m : m;
+              p.drawImage(img, { x: x, y: y, width: iw, height: ih });
+              return doc.save();
+            });
+          });
+        }).then(function (bytes) { dl(box, bytes, "signed.pdf", "Signature added to page " + pageNo); }).catch(function (e) { fail(box, e); });
     });
   })();
   </script>
