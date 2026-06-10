@@ -117,6 +117,7 @@
     var u = getUser();
     var paidNow0 = isPaid();
     applyMemberCopy(paidNow0);
+    document.body.classList.toggle("member", paidNow0); // app-style view: tools on top, no marketing
     // Shared flag so ad scripts on every page can skip ads for paying members.
     try { localStorage.setItem("fm_paid", paidNow0 ? "1" : "0"); } catch (e) {}
     navAccount.innerHTML = "";

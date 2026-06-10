@@ -593,3 +593,21 @@ img, canvas, video, textarea, table { max-width: 100%; }
   .site-header:has(.nav-toggle) .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 66px; left: 0; right: 0;
     background: var(--bg-alt); border-bottom: 1px solid var(--border); padding: 14px 24px; gap: 12px; z-index: 55; }
 }
+
+/* ===== Paid member "app" view: converter + tools on top, full window, no marketing ===== */
+.member-bar { display: none; }
+body.member .hero { display: none; }                 /* drop the marketing hero for members */
+body.member #convert { padding-top: 24px; }          /* converter sits right at the top */
+body.member #convert .section-head { margin-bottom: 22px; }
+body.member #convert .section-head h2::after { display: none; }
+body.member .converter { max-width: 1000px; }        /* fuller window */
+body.member .member-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: center;
+  max-width: 1000px; margin: 0 auto 22px;
+}
+body.member .member-bar strong { color: #ffd479; margin-right: 6px; }
+body.member .member-bar a {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  padding: 9px 16px; font-size: 0.9rem; color: var(--text); transition: border-color .15s, transform .15s;
+}
+body.member .member-bar a:hover { border-color: var(--accent-2); transform: translateY(-1px); }
