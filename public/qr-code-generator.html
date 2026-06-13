@@ -80,22 +80,23 @@
 
   <script>
   (function () {
+    // Self-hosted first (same origin, can't be blocked); CDNs only as backup.
     var QRLIBS = [
-      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js",
-      "https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js",
-      "https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"
+      "/vendor/qrcode-generator.js",
+      "https://cdn.jsdelivr.net/npm/qrcode-generator@2.0.4/dist/qrcode.js",
+      "https://unpkg.com/qrcode-generator@2.0.4/dist/qrcode.js"
     ];
     var loaded = null;
     function loadOne(url) {
       return new Promise(function (res, rej) {
         var s = document.createElement("script"); s.src = url;
-        s.onload = function () { window.QRCode ? res() : rej(new Error("loaded but no QRCode")); };
+        s.onload = function () { (typeof window.qrcode === "function") ? res() : rej(new Error("no qrcode")); };
         s.onerror = function () { rej(new Error("failed " + url)); };
         document.head.appendChild(s);
       });
     }
     function load() {
-      if (window.QRCode) return Promise.resolve();
+      if (typeof window.qrcode === "function") return Promise.resolve();
       if (loaded) return loaded;
       loaded = QRLIBS.reduce(function (chain, url) {
         return chain.catch(function () { return loadOne(url); });
@@ -108,32 +109,68 @@
     function $(id) { return document.getElementById(id); }
     $("qrSize").addEventListener("input", function () { $("qrSizeVal").textContent = this.value + "px"; });
 
+    var MARGIN = 2; // quiet-zone modules
+
+    function buildCanvas(qr, size, dark, light) {
+      var count = qr.getModuleCount();
+      var total = count + MARGIN * 2;
+      var cell = Math.max(1, Math.floor(size / total));
+      var dim = cell * total;
+      var canvas = document.createElement("canvas");
+      canvas.width = dim; canvas.height = dim;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = light; ctx.fillRect(0, 0, dim, dim);
+      ctx.fillStyle = dark;
+      for (var r = 0; r < count; r++) {
+        for (var c = 0; c < count; c++) {
+          if (qr.isDark(r, c)) ctx.fillRect((c + MARGIN) * cell, (r + MARGIN) * cell, cell, cell);
+        }
+      }
+      return canvas;
+    }
+
+    function buildSvg(qr, size, dark, light) {
+      var count = qr.getModuleCount();
+      var total = count + MARGIN * 2;
+      var rects = "";
+      for (var r = 0; r < count; r++) {
+        for (var c = 0; c < count; c++) {
+          if (qr.isDark(r, c)) rects += '<rect x="' + (c + MARGIN) + '" y="' + (r + MARGIN) + '" width="1" height="1"/>';
+        }
+      }
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size +
+        '" viewBox="0 0 ' + total + ' ' + total + '" shape-rendering="crispEdges">' +
+        '<rect width="' + total + '" height="' + total + '" fill="' + light + '"/>' +
+        '<g fill="' + dark + '">' + rects + '</g></svg>';
+    }
+
     function generate() {
       var text = $("qrText").value.trim();
       var box = $("qrResult");
       if (!text) { box.textContent = "Enter a link or text first."; return; }
       var size = parseInt($("qrSize").value, 10);
-      var opts = { width: size, margin: 2, color: { dark: $("qrDark").value, light: $("qrLight").value }, errorCorrectionLevel: "M" };
+      var dark = $("qrDark").value, light = $("qrLight").value;
       box.textContent = "Generating…";
       load().then(function () {
-        var canvas = document.createElement("canvas");
-        window.QRCode.toCanvas(canvas, text, opts, function (err) {
-          if (err) { box.textContent = "Couldn't generate: " + err.message; return; }
-          window.QRCode.toString(text, { type: "svg", margin: 2, color: opts.color, errorCorrectionLevel: "M" }, function (e2, svg) {
-            box.innerHTML = "";
-            canvas.style.cssText = "max-width:280px;width:100%;height:auto;background:#fff;border-radius:10px;padding:8px";
-            var pngUrl = canvas.toDataURL("image/png");
-            var pngA = document.createElement("a"); pngA.href = pngUrl; pngA.download = "qr-code.png"; pngA.className = "btn btn-primary btn-sm"; pngA.textContent = "Download PNG";
-            var row = document.createElement("div"); row.style.cssText = "display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px";
-            row.appendChild(pngA);
-            if (!e2 && svg) {
-              var svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-              var svgA = document.createElement("a"); svgA.href = svgUrl; svgA.download = "qr-code.svg"; svgA.className = "btn btn-ghost btn-sm"; svgA.textContent = "Download SVG";
-              row.appendChild(svgA);
-            }
-            box.appendChild(canvas); box.appendChild(row);
-          });
-        });
+        var qr;
+        try {
+          qr = window.qrcode(0, "M"); // type 0 = auto-fit
+          qr.addData(text); qr.make();
+        } catch (err) { box.textContent = "Couldn't generate: " + (err.message || err); return; }
+
+        var canvas = buildCanvas(qr, size, dark, light);
+        var svg = buildSvg(qr, size, dark, light);
+
+        box.innerHTML = "";
+        canvas.style.cssText = "max-width:280px;width:100%;height:auto;image-rendering:pixelated;background:#fff;border-radius:10px;padding:8px";
+        var row = document.createElement("div"); row.style.cssText = "display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px";
+
+        var pngA = document.createElement("a"); pngA.href = canvas.toDataURL("image/png"); pngA.download = "qr-code.png"; pngA.className = "btn btn-primary btn-sm"; pngA.textContent = "Download PNG"; row.appendChild(pngA);
+
+        var svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+        var svgA = document.createElement("a"); svgA.href = svgUrl; svgA.download = "qr-code.svg"; svgA.className = "btn btn-ghost btn-sm"; svgA.textContent = "Download SVG"; row.appendChild(svgA);
+
+        box.appendChild(canvas); box.appendChild(row);
       }).catch(function (e) { box.textContent = "Error: " + e.message; });
     }
     $("qrBtn").addEventListener("click", generate);
