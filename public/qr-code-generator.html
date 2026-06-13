@@ -80,15 +80,28 @@
 
   <script>
   (function () {
-    var QRLIB = "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js";
+    var QRLIBS = [
+      "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js",
+      "https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"
+    ];
     var loaded = null;
+    function loadOne(url) {
+      return new Promise(function (res, rej) {
+        var s = document.createElement("script"); s.src = url;
+        s.onload = function () { window.QRCode ? res() : rej(new Error("loaded but no QRCode")); };
+        s.onerror = function () { rej(new Error("failed " + url)); };
+        document.head.appendChild(s);
+      });
+    }
     function load() {
       if (window.QRCode) return Promise.resolve();
       if (loaded) return loaded;
-      loaded = new Promise(function (res, rej) {
-        var s = document.createElement("script"); s.src = QRLIB;
-        s.onload = res; s.onerror = function () { rej(new Error("Couldn't load the QR library.")); };
-        document.head.appendChild(s);
+      loaded = QRLIBS.reduce(function (chain, url) {
+        return chain.catch(function () { return loadOne(url); });
+      }, Promise.reject()).catch(function () {
+        loaded = null; // allow a retry on next click
+        throw new Error("Couldn't load the QR library. Check your connection or disable ad-blockers for this page.");
       });
       return loaded;
     }
