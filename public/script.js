@@ -411,8 +411,10 @@
     if (!box) return;
     box.innerHTML = "";
     var planId = plan === "Team" ? (pp && pp.planTeam) : (pp && pp.planPro);
-    if (!pp || !pp.clientId || !planId) { if (divider) divider.style.display = "none"; return; }
+    var ppNote = $("payPaypalNote");
+    if (!pp || !pp.clientId || !planId) { if (divider) divider.style.display = "none"; if (ppNote) ppNote.style.display = "none"; return; }
     if (divider) divider.style.display = "";
+    if (ppNote) ppNote.style.display = "";
     loadPayPalSDK().then(function () {
       var user = getUser();
       window.paypalSub.Buttons({
@@ -436,7 +438,13 @@
             }
           }).catch(function (e) { box.innerHTML = "<small style='color:#ff6b6b'>" + e.message + "</small>"; });
         },
-        onError: function () { showToast("PayPal error — try the card option."); }
+        onError: function (err) {
+          try { console.error("PayPal subscription error:", err); } catch (e) {}
+          var msg = (err && (err.message || err.toString())) || "unknown error";
+          box.innerHTML = "<small style='color:#ff6b6b'>PayPal couldn't start this subscription (" + msg +
+            "). This is usually a PayPal account setting — please use the card button above.</small>";
+          showToast("PayPal couldn't start — use the card option above.");
+        }
       }).render("#paypalButtons").catch(function (e) {
         box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load here. Please use the card option.</small>";
       });
