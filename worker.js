@@ -4,6 +4,7 @@ import { onRequestPost as lemonWebhook } from "./functions/api/lemon-webhook.js"
 import { onRequestPost as verifySub } from "./functions/api/verify-subscription.js";
 import { onRequestPost as paypalVerify } from "./functions/api/paypal-verify.js";
 import { onRequestGet as paypalSetup } from "./functions/api/paypal-setup.js";
+import { onRequestGet as paypalDiag } from "./functions/api/paypal-diag.js";
 import { onRequestPost as paypalWebhook } from "./functions/api/paypal-webhook.js";
 import { onRequestPost as paypalCreateOrder } from "./functions/api/paypal-create-order.js";
 import { onRequestPost as paypalCaptureOrder } from "./functions/api/paypal-capture-order.js";
@@ -42,6 +43,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/paypal-setup") {
       return paypalSetup({ request, env });
+    }
+    if (request.method === "GET" && url.pathname === "/api/paypal-diag") {
+      return paypalDiag({ request, env });
     }
     // Anything else → static site
     return env.ASSETS.fetch(request);
