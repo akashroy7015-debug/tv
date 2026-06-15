@@ -26,7 +26,7 @@ export async function onRequestPost(context) {
     if (isCredits) {
       // User chooses the amount; price is computed server-side (credits granted from amount paid).
       const rate = parseFloat(env.CREDIT_RATE || "0.10");
-      const qty = Math.max(500, Math.min(10000, parseInt(credits || "500", 10) || 500));
+      const qty = Math.max(6, Math.min(10000, parseInt(credits || "6", 10) || 6));
       customPriceCents = Math.round(qty * rate * 100); // cents — must be a top-level attribute, NOT inside checkout_data
     }
 
