@@ -22,21 +22,25 @@ export async function onRequestPost(context) {
       email: email || undefined,
       custom: isCredits ? { user_id: String(userId || ""), type: "credits" } : { user_id: String(userId || ""), plan: String(plan) }
     };
+    let customPriceCents = null;
     if (isCredits) {
       // User chooses the amount; price is computed server-side (credits granted from amount paid).
       const rate = parseFloat(env.CREDIT_RATE || "0.10");
       const qty = Math.max(10, Math.min(5000, parseInt(credits || "50", 10) || 50));
-      checkoutData.custom_price = Math.round(qty * rate * 100); // cents
+      customPriceCents = Math.round(qty * rate * 100); // cents — must be a top-level attribute, NOT inside checkout_data
     }
 
     const origin = new URL(request.url).origin;
+    const attributes = {
+      checkout_data: checkoutData,
+      product_options: { redirect_url: origin + "/?checkout=success" }
+    };
+    if (customPriceCents !== null) attributes.custom_price = customPriceCents;
+
     const payload = {
       data: {
         type: "checkouts",
-        attributes: {
-          checkout_data: checkoutData,
-          product_options: { redirect_url: origin + "/?checkout=success" }
-        },
+        attributes: attributes,
         relationships: {
           store: { data: { type: "stores", id: String(env.LEMONSQUEEZY_STORE_ID) } },
           variant: { data: { type: "variants", id: String(variantId) } }
