@@ -13,15 +13,52 @@ const path = require("path");
 const app = express();
 app.use(cors({ origin: process.env.ALLOW_ORIGIN || "*" }));
 const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 200 * 1024 * 1024 } });
-const TOKEN = process.env.CONVERT_TOKEN || "";
+const TOKEN = process.env.CONVERT_TOKEN || "";              // optional internal/server-to-server token
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "";
+
+// Verify a Supabase access token and return the user, or null. Identity comes
+// only from Supabase — clients can't forge it (unlike the old shared token).
+async function verifyUser(req) {
+  const auth = req.headers["authorization"] || "";
+  const m = /^Bearer\s+(.+)$/i.exec(auth);
+  if (!m || !SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  try {
+    const r = await fetch(SUPABASE_URL + "/auth/v1/user", {
+      headers: { Authorization: "Bearer " + m[1], apikey: SUPABASE_ANON_KEY }
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return u && u.id ? u : null;
+  } catch (e) { return null; }
+}
+
+// Lightweight per-user rate limit (in-memory): max N conversions per window.
+const RATE_MAX = parseInt(process.env.RATE_MAX || "40", 10);
+const RATE_WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || "600000", 10); // 10 min
+const _hits = new Map();
+function allowRate(key) {
+  const now = Date.now();
+  const arr = (_hits.get(key) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (arr.length >= RATE_MAX) { _hits.set(key, arr); return false; }
+  arr.push(now); _hits.set(key, arr);
+  return true;
+}
 
 const IMG = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "tiff", "tif", "ico", "heic", "heif", "svg"];
 const AV = ["mp3", "wav", "aac", "m4a", "ogg", "flac", "opus", "aiff", "mp4", "webm", "mov", "mkv", "avi", "m4v", "gif"];
 
 app.get("/", (_req, res) => res.send("FileMorph universal convert server: OK"));
 
-app.post("/convert", upload.single("file"), (req, res) => {
-  if (TOKEN && req.headers["x-convert-token"] !== TOKEN) return res.status(401).json({ error: "unauthorized" });
+app.post("/convert", upload.single("file"), async (req, res) => {
+  // Auth: accept an internal server-to-server token, OR a signed-in Supabase user.
+  // This stops anyone from using the server anonymously via a token copied from the page source.
+  const tokenOk = TOKEN && req.headers["x-convert-token"] === TOKEN;
+  if (!tokenOk) {
+    const user = await verifyUser(req);
+    if (!user) return res.status(401).json({ error: "Please sign in to use server conversion." });
+    if (!allowRate(user.id)) return res.status(429).json({ error: "Too many conversions in a short time — please wait a few minutes." });
+  }
   const fmt = (req.body.format || "").toLowerCase();
   const f = req.file;
   if (!f || !fmt) return res.status(400).json({ error: "missing file or format" });

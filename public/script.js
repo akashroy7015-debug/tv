@@ -838,19 +838,32 @@
       resultBox.appendChild(icon); resultBox.appendChild(msg); resultBox.appendChild(sub);
       return;
     }
-    showProgress("Converting on our server…", false);
-    var fd = new FormData();
-    fd.append("file", currentFile, currentFile.name || "file");
-    fd.append("format", fmt);
-    var headers = {};
-    if (cfg.convertToken) headers["x-convert-token"] = cfg.convertToken;
-    fetch(cfg.convertServer.replace(/\/$/, "") + "/convert", { method: "POST", headers: headers, body: fd })
-      .then(function (r) {
-        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || ("server error " + r.status)); });
-        return r.blob();
+    Promise.resolve(B.getToken ? B.getToken() : null).then(function (token) {
+      if (!token) {
+        // Server conversion now requires a signed-in account (server validates the JWT).
+        resultBox.innerHTML = "";
+        var ic = document.createElement("div"); ic.style.fontSize = "2.2rem"; ic.textContent = "🔒";
+        var m1 = document.createElement("p"); m1.style.color = "var(--text)"; m1.style.margin = "6px 0";
+        m1.textContent = "Please sign in to run this conversion on our server.";
+        var btn = document.createElement("button"); btn.className = "btn btn-primary btn-sm"; btn.textContent = "Sign in / create account";
+        btn.addEventListener("click", function () { if (typeof openAuth === "function") openAuth("login"); });
+        resultBox.appendChild(ic); resultBox.appendChild(m1); resultBox.appendChild(btn);
+        return;
+      }
+      showProgress("Converting on our server…", false);
+      var fd = new FormData();
+      fd.append("file", currentFile, currentFile.name || "file");
+      fd.append("format", fmt);
+      fetch(cfg.convertServer.replace(/\/$/, "") + "/convert", {
+        method: "POST", headers: { Authorization: "Bearer " + token }, body: fd
       })
-      .then(function (blob) { renderResult(blob, fmt, onSuccess); })
-      .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+        .then(function (r) {
+          if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || ("server error " + r.status)); });
+          return r.blob();
+        })
+        .then(function (blob) { renderResult(blob, fmt, onSuccess); })
+        .catch(function (e) { resultBox.textContent = "Conversion failed: " + (e && e.message ? e.message : e); });
+    });
   }
 
   // Normalize the selected output format to a file extension (image mimes → ext).

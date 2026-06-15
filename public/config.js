@@ -11,7 +11,7 @@ window.FM_CONFIG = {
   // Pay-as-you-go: user enters a $ amount. rate = price per credit (must match CREDIT_RATE in Cloudflare).
   credits: { rate: 0.10, presets: [1, 2, 5, 10], min: 1, max: 1000 },
   // Optional conversion server (DOCX↔PDF, EPUB→PDF, email…). Leave "" to keep those "coming soon".
-  convertServer: "https://convert.filemorph.shop",
-  convertToken: "2f407052bd2354c938425191cac272e0bdce2e4b013fda23"
+  // Auth is the signed-in user's Supabase token (sent by the client) — no shared secret in the browser.
+  convertServer: "https://convert.filemorph.shop"
   // Payments go through Lemon Squeezy's hosted checkout (card + PayPal built in).
 };
