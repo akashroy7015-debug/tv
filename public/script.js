@@ -304,9 +304,7 @@
       openModal(planModal);
       return;
     }
-    var pp = window.FM_CONFIG.paypal;
-    if (pp && pp.clientId) { openPay(plan, price); return; } // offer card + PayPal
-    startCardCheckout(plan); // Lemon Squeezy only
+    startCardCheckout(plan); // Lemon Squeezy checkout (card + PayPal built in)
   }
 
   function startCardCheckout(plan) {
@@ -322,10 +320,8 @@
   function buyCredits() {
     if (B.demo) { showToast("Credits aren't available in demo mode."); return; }
     if (!getUser()) { pendingPlan = { plan: "credits" }; openAuth("login"); return; }
-    var pp = window.FM_CONFIG.paypal;
     var price = (window.FM_CONFIG.credits && window.FM_CONFIG.credits.price) || 5;
-    if (pp && pp.clientId) { openPay("credits", price); return; }
-    startCardCheckout("credits");
+    openPay("credits", price); // modal lets the user pick an amount, then card checkout
   }
 
   /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
@@ -374,8 +370,12 @@
       $("payTitle").textContent = "Subscribe to " + plan;
       $("paySub").textContent = "$" + price + "/month · cancel anytime";
     }
+    // Direct PayPal buttons removed — Lemon Squeezy checkout already offers card + PayPal.
+    var divider = $("payDivider"), ppBox = $("paypalButtons"), ppNote = $("payPaypalNote");
+    if (divider) divider.style.display = "none";
+    if (ppBox) ppBox.innerHTML = "";
+    if (ppNote) ppNote.style.display = "none";
     openModal(payModal);
-    if (plan === "credits") renderPayPalOrder(); else renderPayPal(plan);
   }
   var payCardBtn = $("payCardBtn");
   if (payCardBtn) payCardBtn.addEventListener("click", function () {
