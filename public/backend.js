@@ -45,6 +45,7 @@
       if (currentUser) { await loadSub(); await loadWallet(); }
       sb.auth.onAuthStateChange(function (_e, session) {
         currentUser = session ? session.user : null;
+        if (!currentUser) { sub = null; walletCredits = 0; } // never carry one user's state into another session
         if (_e === "PASSWORD_RECOVERY" && typeof window.FMonRecovery === "function") { try { window.FMonRecovery(); } catch (e) {} }
       });
     })();
@@ -78,15 +79,16 @@
         var u = await sb.auth.getUser();
         currentUser = u.data.user;
         await loadSub();
+        await loadWallet();
         return this.user();
       },
       signUp: async function (email, password) {
         var r = await sb.auth.signUp({ email: email, password: password });
         if (r.error) throw r.error;
-        if (r.data.session) { currentUser = r.data.user; await loadSub(); return { needsVerification: false }; }
+        if (r.data.session) { currentUser = r.data.user; await loadSub(); await loadWallet(); return { needsVerification: false }; }
         return { needsVerification: true }; // email confirmation required
       },
-      logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; },
+      logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; walletCredits = 0; },
       purchase: async function (plan, opts) {
         var body = { plan: plan, userId: currentUser ? currentUser.id : null, email: currentUser ? currentUser.email : null };
         if (opts) for (var k in opts) body[k] = opts[k];
