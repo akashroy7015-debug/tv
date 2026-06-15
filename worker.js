@@ -2,12 +2,6 @@
 import { onRequestPost as createCheckout } from "./functions/api/create-checkout-session.js";
 import { onRequestPost as lemonWebhook } from "./functions/api/lemon-webhook.js";
 import { onRequestPost as verifySub } from "./functions/api/verify-subscription.js";
-import { onRequestPost as paypalVerify } from "./functions/api/paypal-verify.js";
-import { onRequestGet as paypalSetup } from "./functions/api/paypal-setup.js";
-import { onRequestGet as paypalDiag } from "./functions/api/paypal-diag.js";
-import { onRequestPost as paypalWebhook } from "./functions/api/paypal-webhook.js";
-import { onRequestPost as paypalCreateOrder } from "./functions/api/paypal-create-order.js";
-import { onRequestPost as paypalCaptureOrder } from "./functions/api/paypal-capture-order.js";
 import { onRequestPost as manageSub } from "./functions/api/manage-subscription.js";
 
 export default {
@@ -26,26 +20,8 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/verify-subscription") {
       return verifySub({ request, env });
     }
-    if (request.method === "POST" && url.pathname === "/api/paypal-verify") {
-      return paypalVerify({ request, env });
-    }
-    if (request.method === "POST" && url.pathname === "/api/paypal-webhook") {
-      return paypalWebhook({ request, env });
-    }
-    if (request.method === "POST" && url.pathname === "/api/paypal-create-order") {
-      return paypalCreateOrder({ request, env });
-    }
-    if (request.method === "POST" && url.pathname === "/api/paypal-capture-order") {
-      return paypalCaptureOrder({ request, env });
-    }
     if (request.method === "POST" && url.pathname === "/api/manage-subscription") {
       return manageSub({ request, env });
-    }
-    if (request.method === "GET" && url.pathname === "/api/paypal-setup") {
-      return paypalSetup({ request, env });
-    }
-    if (request.method === "GET" && url.pathname === "/api/paypal-diag") {
-      return paypalDiag({ request, env });
     }
     // Anything else → static site
     return env.ASSETS.fetch(request);

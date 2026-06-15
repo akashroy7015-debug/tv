@@ -324,7 +324,7 @@
     openPay("credits", price); // modal lets the user pick an amount, then card checkout
   }
 
-  /* ---------- payment-method modal (card via Lemon Squeezy + direct PayPal) ---------- */
+  /* ---------- payment modal: credit-amount picker → card checkout (Lemon Squeezy) ---------- */
   var currentPayPlan = null;
   function creditRate() { return (window.FM_CONFIG.credits && window.FM_CONFIG.credits.rate) || 0.10; }
   function currentDollar() {
@@ -370,11 +370,6 @@
       $("payTitle").textContent = "Subscribe to " + plan;
       $("paySub").textContent = "$" + price + "/month · cancel anytime";
     }
-    // Direct PayPal buttons removed — Lemon Squeezy checkout already offers card + PayPal.
-    var divider = $("payDivider"), ppBox = $("paypalButtons"), ppNote = $("payPaypalNote");
-    if (divider) divider.style.display = "none";
-    if (ppBox) ppBox.innerHTML = "";
-    if (ppNote) ppNote.style.display = "none";
     openModal(payModal);
   }
   var payCardBtn = $("payCardBtn");
@@ -390,129 +385,8 @@
     }
   });
 
-  var _ppLoading = null;
-  function loadPayPalSDK() {
-    var pp = window.FM_CONFIG.paypal;
-    if (window.paypalSub) return Promise.resolve();
-    if (_ppLoading) return _ppLoading;
-    _ppLoading = new Promise(function (resolve, reject) {
-      var s = document.createElement("script");
-      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&vault=true&intent=subscription&components=buttons";
-      s.setAttribute("data-namespace", "paypalSub");
-      s.onload = resolve;
-      s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
-      document.head.appendChild(s);
-    });
-    return _ppLoading;
-  }
-  function renderPayPal(plan) {
-    var pp = window.FM_CONFIG.paypal;
-    var box = $("paypalButtons"), divider = $("payDivider");
-    if (!box) return;
-    box.innerHTML = "";
-    var planId = plan === "Team" ? (pp && pp.planTeam) : (pp && pp.planPro);
-    var ppNote = $("payPaypalNote");
-    if (!pp || !pp.clientId || !planId) { if (divider) divider.style.display = "none"; if (ppNote) ppNote.style.display = "none"; return; }
-    if (divider) divider.style.display = "";
-    if (ppNote) ppNote.style.display = "";
-    loadPayPalSDK().then(function () {
-      var user = getUser();
-      window.paypalSub.Buttons({
-        style: { layout: "vertical", color: "gold", shape: "pill", label: "subscribe" },
-        createSubscription: function (data, actions) {
-          return actions.subscription.create({ plan_id: planId, custom_id: user ? user.id : "" });
-        },
-        onApprove: function (data) {
-          box.innerHTML = "<small style='color:var(--muted)'>Confirming your subscription…</small>";
-          fetch("/api/paypal-verify", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subscriptionID: data.subscriptionID, userId: user ? user.id : null })
-          }).then(function (r) { return r.json(); }).then(function (d) {
-            if (d && d.active) {
-              if (B.applyPlan) B.applyPlan(d.plan);
-              if (payModal) closeModal(payModal);
-              renderAccount(); renderUsage();
-              showToast("🎉 You're on " + d.plan + " — thank you!");
-            } else {
-              box.innerHTML = "<small style='color:#ff6b6b'>" + ((d && d.error) || "Could not confirm subscription") + "</small>";
-            }
-          }).catch(function (e) { box.innerHTML = "<small style='color:#ff6b6b'>" + e.message + "</small>"; });
-        },
-        onError: function (err) {
-          try { console.error("PayPal subscription error:", err); } catch (e) {}
-          var msg = (err && (err.message || err.toString())) || "unknown error";
-          box.innerHTML = "<small style='color:#ff6b6b'>PayPal couldn't start this subscription (" + msg +
-            "). This is usually a PayPal account setting — please use the card button above.</small>";
-          showToast("PayPal couldn't start — use the card option above.");
-        }
-      }).render("#paypalButtons").catch(function (e) {
-        box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load here. Please use the card option.</small>";
-      });
-    }).catch(function () {
-      box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
-    });
-  }
-
-  /* ---------- PayPal one-time order (credit packs) ---------- */
-  var _ppOrderLoading = null;
-  function loadPayPalOrderSDK() {
-    var pp = window.FM_CONFIG.paypal;
-    if (window.paypalOrder) return Promise.resolve();
-    if (_ppOrderLoading) return _ppOrderLoading;
-    _ppOrderLoading = new Promise(function (resolve, reject) {
-      var s = document.createElement("script");
-      s.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(pp.clientId) + "&intent=capture&currency=USD&components=buttons";
-      s.setAttribute("data-namespace", "paypalOrder");
-      s.onload = resolve;
-      s.onerror = function () { reject(new Error("PayPal SDK failed to load")); };
-      document.head.appendChild(s);
-    });
-    return _ppOrderLoading;
-  }
-  function renderPayPalOrder(price) {
-    var pp = window.FM_CONFIG.paypal;
-    var box = $("paypalButtons"), divider = $("payDivider");
-    if (!box) return;
-    box.innerHTML = "";
-    if (!pp || !pp.clientId) { if (divider) divider.style.display = "none"; return; }
-    if (divider) divider.style.display = "";
-    var user = getUser();
-    loadPayPalOrderSDK().then(function () {
-      window.paypalOrder.Buttons({
-        style: { layout: "vertical", color: "gold", shape: "pill", label: "pay" },
-        createOrder: function () {
-          return fetch("/api/paypal-create-order", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: user ? user.id : null, credits: currentCreditQty() })
-          }).then(function (r) { return r.json(); }).then(function (d) {
-            if (d.id) return d.id;
-            box.innerHTML = "<small style='color:#ff6b6b'>PayPal: " + (d.error || "couldn't create order") + "</small>";
-            throw new Error(d.error || "order failed");
-          });
-        },
-        onApprove: function (data) {
-          box.innerHTML = "<small style='color:var(--muted)'>Confirming your payment…</small>";
-          return fetch("/api/paypal-capture-order", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderID: data.orderID, userId: user ? user.id : null })
-          }).then(function (r) { return r.json(); }).then(function (d) {
-            if (d && d.ok) {
-              if (payModal) closeModal(payModal);
-              (B.refresh ? B.refresh() : Promise.resolve()).then(function () { renderUsage(); });
-              showToast("✓ " + (d.added || "") + " credits added — thank you!");
-            } else {
-              box.innerHTML = "<small style='color:#ff6b6b'>" + ((d && d.error) || "Couldn't add credits") + "</small>";
-            }
-          });
-        },
-        onError: function (err) {
-          box.innerHTML = "<small style='color:#ff6b6b'>PayPal error: " + (err && err.message ? err.message : "see console") + " — or use the card option.</small>";
-        }
-      }).render("#paypalButtons").catch(function () {
-        box.innerHTML = "<small style='color:var(--muted)'>PayPal couldn't load. Please use the card option.</small>";
-      });
-    }).catch(function () { if (divider) divider.style.display = "none"; });
-  }
+  // Direct-PayPal integration removed — all checkout goes through Lemon Squeezy
+  // (its hosted checkout already offers both card and PayPal).
 
   function friendlyAuthError(msg) {
     msg = msg || "";
