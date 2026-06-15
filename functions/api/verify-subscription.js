@@ -1,7 +1,7 @@
 // Cloudflare Pages Function — verify a user's Lemon Squeezy subscription by email.
-// Route: POST /api/verify-subscription   { userId, email }
+// Route: POST /api/verify-subscription   { token }   (Supabase access token — identity verified)
 // Reliable fallback that doesn't depend on the webhook firing.
-// Env: LEMONSQUEEZY_API_KEY (+ optional SUPABASE_* to persist)
+// Env: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, LEMONSQUEEZY_API_KEY
 import { createClient } from "@supabase/supabase-js";
 
 function json(o, s = 200) {
@@ -12,9 +12,18 @@ export async function onRequestPost(context) {
   const { request, env } = context;
   try {
     const body = await request.json();
-    const userId = body.userId, email = body.email;
-    if (!email) return json({ active: false, error: "missing email" }, 400);
+    const token = body.token;
+    if (!token) return json({ active: false, error: "not signed in" }, 401);
+    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return json({ active: false, error: "not configured (SUPABASE_ANON_KEY)" }, 500);
     if (!env.LEMONSQUEEZY_API_KEY) return json({ active: false, error: "LEMONSQUEEZY_API_KEY not set" }, 500);
+
+    // Identity is taken ONLY from the verified token — never from client-supplied fields.
+    const authClient = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    const ures = await authClient.auth.getUser(token);
+    const user = ures.data && ures.data.user;
+    if (!user) return json({ active: false, error: "invalid session" }, 401);
+    const userId = user.id, email = user.email;
+    if (!email) return json({ active: false, error: "no email on account" }, 400);
 
     var url = "https://api.lemonsqueezy.com/v1/subscriptions?filter[store_id]=" +
       encodeURIComponent(env.LEMONSQUEEZY_STORE_ID || "") +

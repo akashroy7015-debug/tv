@@ -107,9 +107,12 @@
       verify: async function () {
         if (!currentUser) return false;
         try {
+          var s = await sb.auth.getSession();
+          var token = s.data.session ? s.data.session.access_token : null;
+          if (!token) return paid();
           var res = await fetch("/api/verify-subscription", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: currentUser.id, email: currentUser.email })
+            body: JSON.stringify({ token: token })
           });
           var d = await res.json();
           if (d && d.active) { sub = { plan: d.plan, status: "active" }; return true; }

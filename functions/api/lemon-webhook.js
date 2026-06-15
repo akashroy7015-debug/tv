@@ -18,8 +18,11 @@ function safeEqual(a, b) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+  // Fail closed: without a configured secret we cannot verify authenticity.
+  if (!env.LEMONSQUEEZY_WEBHOOK_SECRET) return new Response("Webhook secret not configured", { status: 500 });
+
   const body = await request.text();
-  const signature = request.headers.get("X-Signature") || "";
+  const signature = (request.headers.get("X-Signature") || "").trim().toLowerCase();
 
   const expected = await hmacHex(env.LEMONSQUEEZY_WEBHOOK_SECRET, body);
   if (!safeEqual(expected, signature)) return new Response("Invalid signature", { status: 401 });

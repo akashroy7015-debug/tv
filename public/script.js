@@ -508,7 +508,11 @@
       reader.readAsDataURL(file);
     } else {
       currentImage = null; previewImg.style.display = "none";
-      origMeta.innerHTML = "📎 <strong>" + (file.name || "file") + "</strong> · " + humanSize(file.size);
+      // Build with textContent so a malicious file name can't inject HTML (XSS).
+      origMeta.textContent = "";
+      var label = document.createElement("strong");
+      label.textContent = file.name || "file";
+      origMeta.append("📎 ", label, " · " + humanSize(file.size));
     }
   }
   fileInput.setAttribute("multiple", "multiple"); // allow batch selection
