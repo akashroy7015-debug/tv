@@ -696,15 +696,34 @@
     if (typeof onSuccess === "function") onSuccess();
   }
   /* ---------- lazy script loader (for HEIC/TIFF/spreadsheet libraries) ---------- */
+  // Tries jsDelivr first, then unpkg (same npm path) so a single CDN outage,
+  // ad-blocker, or geo-block doesn't break a tool.
   var _libs = {};
+  function libMirrors(url) {
+    var urls = [url];
+    if (url.indexOf("https://cdn.jsdelivr.net/npm/") === 0) {
+      urls.push(url.replace("https://cdn.jsdelivr.net/npm/", "https://unpkg.com/"));
+    } else if (url.indexOf("https://unpkg.com/") === 0) {
+      urls.push(url.replace("https://unpkg.com/", "https://cdn.jsdelivr.net/npm/"));
+    }
+    return urls;
+  }
+  function loadOneScript(src, globalName) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement("script"); s.src = src;
+      s.onload = function () { window[globalName] ? res(window[globalName]) : rej(new Error("loaded but missing " + globalName)); };
+      s.onerror = function () { rej(new Error("failed " + src)); };
+      document.head.appendChild(s);
+    });
+  }
   function loadLib(url, globalName) {
     if (window[globalName]) return Promise.resolve(window[globalName]);
     if (_libs[url]) return _libs[url];
-    _libs[url] = new Promise(function (res, rej) {
-      var s = document.createElement("script"); s.src = url;
-      s.onload = function () { res(window[globalName]); };
-      s.onerror = function () { rej(new Error("Couldn't load a required library.")); };
-      document.head.appendChild(s);
+    _libs[url] = libMirrors(url).reduce(function (chain, src) {
+      return chain.catch(function () { return loadOneScript(src, globalName); });
+    }, Promise.reject()).catch(function () {
+      delete _libs[url]; // allow retry on next attempt
+      throw new Error("Couldn't load a required library. Check your connection or disable ad-blockers, then retry.");
     });
     return _libs[url];
   }
@@ -852,20 +871,36 @@
 
   /* ---------- in-browser audio/video converter (ffmpeg.wasm — our own, no upload) ---------- */
   var _ff = null, _ffLoading = null;
+  // import() a module, falling back from jsDelivr to unpkg (same npm path).
+  function importMod(url) {
+    return import(/* @vite-ignore */ url).catch(function () {
+      var alt = url.indexOf("https://cdn.jsdelivr.net/npm/") === 0
+        ? url.replace("https://cdn.jsdelivr.net/npm/", "https://unpkg.com/")
+        : url.replace("https://unpkg.com/", "https://cdn.jsdelivr.net/npm/");
+      return import(/* @vite-ignore */ alt);
+    });
+  }
   function loadFFmpeg() {
     if (_ff) return Promise.resolve(_ff);
     if (_ffLoading) return _ffLoading;
     _ffLoading = (async function () {
-      var mod = await import("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
-      var util = await import("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js");
+      var mod = await importMod("https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js");
+      var util = await importMod("https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js");
       var ff = new mod.FFmpeg();
-      var base = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
-      await ff.load({
-        coreURL: await util.toBlobURL(base + "/ffmpeg-core.js", "text/javascript"),
-        wasmURL: await util.toBlobURL(base + "/ffmpeg-core.wasm", "application/wasm")
-      });
-      _ff = { ff: ff, util: util };
-      return _ff;
+      var bases = ["https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm", "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm"];
+      var lastErr = null;
+      for (var i = 0; i < bases.length; i++) {
+        try {
+          await ff.load({
+            coreURL: await util.toBlobURL(bases[i] + "/ffmpeg-core.js", "text/javascript"),
+            wasmURL: await util.toBlobURL(bases[i] + "/ffmpeg-core.wasm", "application/wasm")
+          });
+          _ff = { ff: ff, util: util };
+          return _ff;
+        } catch (e) { lastErr = e; }
+      }
+      _ffLoading = null;
+      throw lastErr || new Error("Couldn't load the audio/video engine.");
     })();
     return _ffLoading;
   }

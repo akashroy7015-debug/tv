@@ -38,7 +38,8 @@
     var sb = null, currentUser = null, sub = null, walletCredits = 0;
     function paid() { return !!(sub && (sub.status === "active" || sub.status === "trialing")); }
     var ready = (async function () {
-      var mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+      var mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm")
+        .catch(function () { return import("https://esm.sh/@supabase/supabase-js@2"); });
       sb = mod.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       var s = await sb.auth.getSession();
       currentUser = s.data.session ? s.data.session.user : null;
