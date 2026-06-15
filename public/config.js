@@ -9,7 +9,7 @@ window.FM_CONFIG = {
   checkoutEndpoint: "/api/create-checkout-session",
   plans: { Pro: 9, Team: 29 },
   // Pay-as-you-go: user enters a $ amount. rate = price per credit (must match CREDIT_RATE in Cloudflare).
-  credits: { rate: 0.10, presets: [2, 5, 10, 20, 50], min: 1, max: 500 },
+  credits: { rate: 0.10, presets: [50, 100, 200, 500], min: 50, max: 1000 },
   // Optional conversion server (DOCX↔PDF, EPUB→PDF, email…). Leave "" to keep those "coming soon".
   convertServer: "https://convert.filemorph.shop",
   convertToken: "2f407052bd2354c938425191cac272e0bdce2e4b013fda23",
