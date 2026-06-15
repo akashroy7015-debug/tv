@@ -11,7 +11,16 @@ const os = require("os");
 const path = require("path");
 
 const app = express();
-app.use(cors({ origin: process.env.ALLOW_ORIGIN || "*" }));
+// Allow one or more origins (comma-separated in ALLOW_ORIGIN). Defaults to the
+// apex + www site domains so the browser isn't blocked by a CORS origin mismatch.
+const ALLOWED = (process.env.ALLOW_ORIGIN || "https://filemorph.shop,https://www.filemorph.shop")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: function (origin, cb) {
+    if (!origin || ALLOWED.indexOf("*") !== -1 || ALLOWED.indexOf(origin) !== -1) return cb(null, true);
+    return cb(null, false);
+  }
+}));
 const upload = multer({ dest: os.tmpdir(), limits: { fileSize: 200 * 1024 * 1024 } });
 const TOKEN = process.env.CONVERT_TOKEN || "";              // optional internal/server-to-server token
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
