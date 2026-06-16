@@ -15,18 +15,13 @@
   function currentPlan() { var u = getUser(); return (u && u.plan) ? u.plan : "free"; }
   function planLimit() { var l = PLAN_LIMITS[currentPlan()]; return l == null ? PLAN_LIMITS.free : l; }
   function unlimited() { return planLimit() === Infinity; }
-  // Signed-in usage is authoritative server-side (Supabase consume_conversions) — tamper-proof.
-  // Anonymous users get a small best-effort monthly trial (client-side) before sign-in is required.
-  var ANON_FREE = 3;
-  function anonKey() { return "fm_anon_" + new Date().toISOString().slice(0, 7); }
-  function anonUsed() { return parseInt(lsGet(anonKey()) || "0", 10); }
-  function anonBump(k) { lsSet(anonKey(), String(anonUsed() + (k || 1))); }
-  function anonLeft() { return Math.max(0, ANON_FREE - anonUsed()); }
+  // Usage is authoritative server-side (Supabase consume_conversions) — tamper-proof.
+  // Converting requires an account, so the monthly quota can't be reset by clearing the browser.
   function serverUsed() { return (B.monthlyUsed ? (B.monthlyUsed() || 0) : 0); }
-  function displayLimit() { return getUser() ? planLimit() : ANON_FREE; }
+  function displayLimit() { return planLimit(); }
   function quotaLeft() {
     if (unlimited()) return Infinity;
-    if (!getUser()) return anonLeft();
+    if (!getUser()) return 0;            // must sign in to convert
     return Math.max(0, planLimit() - serverUsed());
   }
   function isPaid() { return B.isPaid(); }
@@ -198,7 +193,7 @@
     var limit = displayLimit();
     if (plan === "free") {
       if (!getUser()) {
-        usageText.innerHTML = "Free trial · <strong>" + left + " / " + ANON_FREE + "</strong> — sign in for your full free monthly quota";
+        usageText.innerHTML = "<strong>Sign in to convert</strong> — 5 free conversions every month with a free account";
         upgradeLink.textContent = "Sign in / sign up →";
         upgradeLink.hidden = false;
       } else {
@@ -473,7 +468,10 @@
     });
   });
   function planPrice(plan) { return (window.FM_CONFIG.plans && window.FM_CONFIG.plans[plan]) || (plan === "Team" ? 29 : 9); }
-  upgradeLink.addEventListener("click", function () { var t = nextTier(); choosePlan(t, planPrice(t)); });
+  upgradeLink.addEventListener("click", function () {
+    if (!getUser()) { openAuth("signup"); return; }
+    var t = nextTier(); choosePlan(t, planPrice(t));
+  });
 
   /* ---------- category tabs ---------- */
   function applyCategory(cat) {
@@ -562,9 +560,8 @@
   function gateThen(n, onAllowed) {
     n = n || 1;
     if (!getUser()) {
-      var a = anonLeft();
-      if (a >= 1) { var take = Math.min(a, n); anonBump(take); renderUsage(); onAllowed(take); return; }
-      showToast("Create a free account to keep converting.");
+      // Login required to convert — the free monthly quota is tied to the account (tamper-proof).
+      showToast("Create a free account to convert — 5 free every month.");
       if (typeof openAuth === "function") openAuth("signup");
       return;
     }

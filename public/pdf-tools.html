@@ -255,11 +255,6 @@
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
     function curUser() { return (B && B.user) ? B.user() : null; }
-    var ANON_FREE = 3;
-    function anonKey() { return "fm_anon_" + new Date().toISOString().slice(0, 7); }
-    function anonUsed() { return parseInt(lsGet(anonKey()) || "0", 10); }
-    function anonBump() { lsSet(anonKey(), String(anonUsed() + 1)); }
-    function anonLeft() { return Math.max(0, ANON_FREE - anonUsed()); }
     function upgrade(box, login) {
       box.innerHTML = "";
       var ic = document.createElement("div"); ic.style.fontSize = "2rem"; ic.textContent = "🔒";
@@ -274,10 +269,7 @@
     }
     // Count one conversion, then render via onOk(). Signed-in → server counts atomically.
     function gateConsume(box, onOk) {
-      if (!curUser()) {
-        if (anonLeft() >= 1) { anonBump(); onOk(); return; }
-        upgrade(box, true); return;
-      }
+      if (!curUser()) { upgrade(box, true); return; } // login required
       box.textContent = "Checking your quota…";
       B.consume(1).then(function (res) {
         if (res && res.allowed >= 1) onOk();
