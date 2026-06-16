@@ -26,6 +26,8 @@
       refresh: function () { return Promise.resolve(); },
       verify: function () { return Promise.resolve(this.isPaid()); },
       credits: function () { return 0; },
+      monthlyUsed: function () { return 0; },
+      consume: function (n) { return Promise.resolve({ allowed: n || 1, reason: "demo" }); },
       spendCredit: function () { return Promise.resolve(-1); },
       getToken: function () { return Promise.resolve(null); },
       resetPassword: function () { return Promise.resolve(true); },
@@ -35,21 +37,29 @@
 
   /* ---------- LIVE backend (Supabase + Stripe) ---------- */
   function LiveBackend() {
-    var sb = null, currentUser = null, sub = null, walletCredits = 0;
+    var sb = null, currentUser = null, sub = null, walletCredits = 0, usageUsed = 0;
     function paid() { return !!(sub && (sub.status === "active" || sub.status === "trialing")); }
+    function period() { return new Date().toISOString().slice(0, 7); }
     var ready = (async function () {
       var mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm")
         .catch(function () { return import("https://esm.sh/@supabase/supabase-js@2"); });
       sb = mod.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       var s = await sb.auth.getSession();
       currentUser = s.data.session ? s.data.session.user : null;
-      if (currentUser) { await loadSub(); await loadWallet(); }
+      if (currentUser) { await loadSub(); await loadWallet(); await loadUsage(); }
       sb.auth.onAuthStateChange(function (_e, session) {
         currentUser = session ? session.user : null;
-        if (!currentUser) { sub = null; walletCredits = 0; } // never carry one user's state into another session
+        if (!currentUser) { sub = null; walletCredits = 0; usageUsed = 0; } // never carry one user's state into another session
         if (_e === "PASSWORD_RECOVERY" && typeof window.FMonRecovery === "function") { try { window.FMonRecovery(); } catch (e) {} }
       });
     })();
+    async function loadUsage() {
+      if (!currentUser) { usageUsed = 0; return; }
+      try {
+        var r = await sb.from("usage").select("used").eq("user_id", currentUser.id).eq("period", period()).maybeSingle();
+        usageUsed = r.data ? (r.data.used || 0) : 0;
+      } catch (e) { usageUsed = 0; }
+    }
     async function loadSub() {
       if (!currentUser) { sub = null; return; }
       try {
@@ -81,15 +91,16 @@
         currentUser = u.data.user;
         await loadSub();
         await loadWallet();
+        await loadUsage();
         return this.user();
       },
       signUp: async function (email, password) {
         var r = await sb.auth.signUp({ email: email, password: password });
         if (r.error) throw r.error;
-        if (r.data.session) { currentUser = r.data.user; await loadSub(); await loadWallet(); return { needsVerification: false }; }
+        if (r.data.session) { currentUser = r.data.user; await loadSub(); await loadWallet(); await loadUsage(); return { needsVerification: false }; }
         return { needsVerification: true }; // email confirmation required
       },
-      logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; walletCredits = 0; },
+      logout: async function () { try { await sb.auth.signOut(); } catch (e) {} currentUser = null; sub = null; walletCredits = 0; usageUsed = 0; },
       purchase: async function (plan, opts) {
         var body = { plan: plan, userId: currentUser ? currentUser.id : null, email: currentUser ? currentUser.email : null };
         if (opts) for (var k in opts) body[k] = opts[k];
@@ -122,6 +133,20 @@
         return paid();
       },
       credits: function () { return walletCredits; },
+      monthlyUsed: function () { return usageUsed; },
+      // Server-authoritative metering: atomically count up to n conversions against
+      // the user's quota (then credits). Returns { allowed:Number, reason, used, credits }.
+      consume: async function (n) {
+        if (!currentUser) return { allowed: 0, reason: "login" };
+        try {
+          var r = await sb.rpc("consume_conversions", { n: n || 1 });
+          if (r.error) return { allowed: 0, reason: "error", error: r.error.message };
+          var d = r.data || {};
+          if (typeof d.credits === "number") walletCredits = d.credits;
+          if (typeof d.used === "number") usageUsed = d.used;
+          return d;
+        } catch (e) { return { allowed: 0, reason: "error", error: String(e) }; }
+      },
       getToken: async function () {
         try { var s = await sb.auth.getSession(); return s.data.session ? s.data.session.access_token : null; }
         catch (e) { return null; }
@@ -137,7 +162,7 @@
           return bal;
         } catch (e) { return -1; }
       },
-      refresh: async function () { await loadSub(); await loadWallet(); },
+      refresh: async function () { await loadSub(); await loadWallet(); await loadUsage(); },
       // Email a password-reset link that returns to the site (recovery flow).
       resetPassword: async function (email) {
         var r = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });

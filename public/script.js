@@ -15,15 +15,20 @@
   function currentPlan() { var u = getUser(); return (u && u.plan) ? u.plan : "free"; }
   function planLimit() { var l = PLAN_LIMITS[currentPlan()]; return l == null ? PLAN_LIMITS.free : l; }
   function unlimited() { return planLimit() === Infinity; }
-  // Usage is tracked per account (or "anon") per calendar month, so it resets monthly.
-  function usedKey() {
-    var u = getUser();
-    var who = u && u.id ? u.id : (u && u.email ? u.email : "anon");
-    return "fm_used_" + who + "_" + new Date().toISOString().slice(0, 7);
+  // Signed-in usage is authoritative server-side (Supabase consume_conversions) — tamper-proof.
+  // Anonymous users get a small best-effort monthly trial (client-side) before sign-in is required.
+  var ANON_FREE = 3;
+  function anonKey() { return "fm_anon_" + new Date().toISOString().slice(0, 7); }
+  function anonUsed() { return parseInt(lsGet(anonKey()) || "0", 10); }
+  function anonBump(k) { lsSet(anonKey(), String(anonUsed() + (k || 1))); }
+  function anonLeft() { return Math.max(0, ANON_FREE - anonUsed()); }
+  function serverUsed() { return (B.monthlyUsed ? (B.monthlyUsed() || 0) : 0); }
+  function displayLimit() { return getUser() ? planLimit() : ANON_FREE; }
+  function quotaLeft() {
+    if (unlimited()) return Infinity;
+    if (!getUser()) return anonLeft();
+    return Math.max(0, planLimit() - serverUsed());
   }
-  function used() { return parseInt(lsGet(usedKey()) || "0", 10); }
-  function bumpUsed() { lsSet(usedKey(), String(used() + 1)); }
-  function quotaLeft() { return unlimited() ? Infinity : Math.max(0, planLimit() - used()); }
   function isPaid() { return B.isPaid(); }
   function nextTier() { return currentPlan() === "Pro" ? "Team" : "Pro"; }
   function humanSize(b) {
@@ -190,11 +195,17 @@
       return;
     }
     var left = quotaLeft();
-    var limit = planLimit();
+    var limit = displayLimit();
     if (plan === "free") {
-      usageText.innerHTML = "Free · <strong>" + left + " / " + limit + "</strong> this month" + creditChip();
-      upgradeLink.textContent = creditsLeft() > 0 ? "Top up credits →" : "Upgrade for more →";
-      upgradeLink.hidden = left > 2 && creditsLeft() > 0;
+      if (!getUser()) {
+        usageText.innerHTML = "Free trial · <strong>" + left + " / " + ANON_FREE + "</strong> — sign in for your full free monthly quota";
+        upgradeLink.textContent = "Sign in / sign up →";
+        upgradeLink.hidden = false;
+      } else {
+        usageText.innerHTML = "Free · <strong>" + left + " / " + limit + "</strong> this month" + creditChip();
+        upgradeLink.textContent = creditsLeft() > 0 ? "Top up credits →" : "Upgrade for more →";
+        upgradeLink.hidden = left > 2 && creditsLeft() > 0;
+      }
     } else {
       // Paid member (e.g. Pro) — premium wording, no "free" framing.
       usageText.innerHTML = "<span class='pill-gold'>" + plan + "</span> <span class='verified'>✦</span> Member · "
@@ -545,28 +556,35 @@
   /* ---------- gating + convert ---------- */
   function creditsLeft() { return B.credits ? (B.credits() || 0) : 0; }
 
+  // Single authority for "may I do N conversions?". Logged-in → server counts atomically
+  // (quota then credits); anonymous → small local trial then sign-in required.
+  // onAllowed(k) runs with the number actually granted (k>=1).
+  function gateThen(n, onAllowed) {
+    n = n || 1;
+    if (!getUser()) {
+      var a = anonLeft();
+      if (a >= 1) { var take = Math.min(a, n); anonBump(take); renderUsage(); onAllowed(take); return; }
+      showToast("Create a free account to keep converting.");
+      if (typeof openAuth === "function") openAuth("signup");
+      return;
+    }
+    B.consume(n).then(function (res) {
+      renderUsage(); renderAccount();
+      var allowed = (res && res.allowed) ? res.allowed : 0;
+      if (allowed >= 1) { onAllowed(allowed); }
+      else if (res && res.reason === "login") { openAuth("login"); }
+      else if (res && res.reason === "error") { showToast("Couldn't verify your quota — please try again."); }
+      else { outOfConversions(); }
+    });
+  }
+
   convertBtn.addEventListener("click", function () {
     if (batchFiles && batchFiles.length > 1) { startBatch(); return; }
     if (!currentFile) return;
     var engine = CATS[currentCat].engine;
     if (engine === "soon") { comingSoon(); return; } // don't spend anything on unsupported types
-
-    // 1) Unlimited plan → just convert.
-    if (unlimited()) { doConvert(); return; }
-    // 2) Monthly quota (free or Pro) left → convert, count it locally.
-    if (quotaLeft() > 0) { doConvert(); bumpUsed(); renderUsage(); return; }
-    // 3) Pay-as-you-go credits → convert, and only spend a credit if it succeeds.
-    if (creditsLeft() > 0) {
-      doConvert(function () {
-        B.spendCredit().then(function (bal) {
-          renderUsage(); renderAccount();
-          if (bal === 0) showToast("That was your last credit.");
-        });
-      });
-      return;
-    }
-    // 4) Nothing left → offer credits or a plan.
-    outOfConversions();
+    if (unlimited()) { doConvert(); return; }         // Team → no metering
+    gateThen(1, function () { doConvert(); });         // count one (server-side if signed in)
   });
 
   function outOfConversions() {
@@ -579,23 +597,17 @@
     document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
   }
   /* ---------- batch conversion (image tab — convert many at once, private, zip) ---------- */
-  function consumeOne() {
-    if (unlimited()) return;
-    if (quotaLeft() > 0) { bumpUsed(); renderUsage(); return; }
-    if (creditsLeft() > 0) { return B.spendCredit().then(function () { renderUsage(); renderAccount(); }); }
-  }
   function startBatch() {
     if (CATS[currentCat].engine !== "image") { showToast("Batch conversion is available on the Image tab."); return; }
     var n = batchFiles.length;
-    if (!unlimited()) {
-      var avail = quotaLeft() + creditsLeft();
-      if (avail < n) {
-        showToast("Batch of " + n + " needs " + n + " conversions — you have " + avail + ". Upgrade or buy credits.");
-        document.getElementById("plans").scrollIntoView({ behavior: "smooth" });
-        return;
+    if (unlimited()) { batchConvertImages(); return; }
+    gateThen(n, function (allowed) {
+      if (allowed < n) {
+        showToast("Converting " + allowed + " of " + n + " — buy credits or upgrade for the rest.");
+        batchFiles = batchFiles.slice(0, allowed);
       }
-    }
-    batchConvertImages();
+      batchConvertImages();
+    });
   }
   function batchConvertImages() {
     var mime = formatSelect.value, quality = parseInt(qualityRange.value, 10) / 100;
@@ -608,7 +620,6 @@
           return imageFileToBlob(f, mime, quality).then(function (out) {
             var base = (f.name || "file").replace(/\.[^.]+$/, "");
             zip.file(base + "." + out.ext, out.blob); ok++;
-            return consumeOne();
           }).catch(function () { failed.push(f.name || "file"); });
         }).then(function () {
           done++; prog.setPercent(Math.round(done / files.length * 100)); prog.setLabel("Converting " + done + " / " + files.length + "…");
