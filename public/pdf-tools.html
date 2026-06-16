@@ -214,6 +214,8 @@
     </div>
   </footer>
 
+  <script src="config.js?v=28"></script>
+  <script src="backend.js?v=25"></script>
   <script>
   (function () {
     var PDFLIB = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
@@ -247,7 +249,37 @@
     }
     function $(id) { return document.getElementById(id); }
     function human(b) { if (b < 1024) return b + " B"; if (b < 1048576) return (b / 1024).toFixed(1) + " KB"; return (b / 1048576).toFixed(2) + " MB"; }
+
+    /* ---------- usage gating (shared monthly quota + credits with the converter) ---------- */
+    var B = window.FMBackend;
+    var PLAN_LIMITS = { free: 5, Pro: 300, Team: Infinity };
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function curUser() { return (B && B.user) ? B.user() : null; }
+    function curPlan() { var u = curUser(); return (u && u.plan) ? u.plan : "free"; }
+    function planLimit() { var l = PLAN_LIMITS[curPlan()]; return l == null ? 5 : l; }
+    function unlimited() { return planLimit() === Infinity; }
+    function usedKey() { var u = curUser(); var who = u && u.id ? u.id : (u && u.email ? u.email : "anon"); return "fm_used_" + who + "_" + new Date().toISOString().slice(0, 7); }
+    function used() { return parseInt(lsGet(usedKey()) || "0", 10); }
+    function bumpUsed() { lsSet(usedKey(), String(used() + 1)); }
+    function quotaLeft() { return unlimited() ? Infinity : Math.max(0, planLimit() - used()); }
+    function credits() { return (B && B.credits) ? (B.credits() || 0) : 0; }
+    // Returns true (and consumes one conversion) if allowed; false (renders upgrade prompt) if out.
+    function consumeOne(box) {
+      if (unlimited()) return true;
+      if (quotaLeft() > 0) { bumpUsed(); return true; }
+      if (credits() > 0) { if (B.spendCredit) B.spendCredit(); return true; }
+      box.innerHTML = "";
+      var ic = document.createElement("div"); ic.style.fontSize = "2rem"; ic.textContent = "🔒";
+      var m = document.createElement("p"); m.style.margin = "6px 0"; m.style.color = "var(--text)";
+      m.textContent = "You're out of conversions this month. Upgrade or buy credits to keep using the PDF tools.";
+      var a = document.createElement("a"); a.href = "/#plans"; a.className = "btn btn-primary btn-sm"; a.textContent = "See plans & credits";
+      box.appendChild(ic); box.appendChild(m); box.appendChild(a);
+      return false;
+    }
+
     function show(box, blob, name, label) {
+      if (!consumeOne(box)) return; // enforce quota/credits before delivering the result
       var url = URL.createObjectURL(blob); box.innerHTML = "";
       var i = document.createElement("div"); i.style.fontSize = "2.2rem"; i.textContent = "✅";
       var m = document.createElement("small"); m.textContent = (label || name) + " · " + human(blob.size);
