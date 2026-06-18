@@ -52,6 +52,25 @@ export async function onRequestPost(context) {
         if (n > 0) await supabase.rpc("add_credits", { uid: userId, n: n });
       }
       // (subscription initial orders are handled by subscription_created)
+    } else if (event === "order_refunded") {
+      // Refund (often fraud/chargeback protection) — undo whatever the order granted.
+      if (custom.type === "credits") {
+        // Claw back the credits that were granted, floored at zero (service role bypasses RLS).
+        const rate = parseFloat(env.CREDIT_RATE || "0.10");
+        const cents = parseInt(attrs.total || "0", 10);
+        const n = Math.round((cents / 100) / rate);
+        if (n > 0) {
+          const { data: w } = await supabase.from("wallets").select("credits").eq("user_id", userId).maybeSingle();
+          const cur = w ? (w.credits || 0) : 0;
+          await supabase.from("wallets").update({ credits: Math.max(0, cur - n), updated_at: new Date().toISOString() }).eq("user_id", userId);
+        }
+      } else {
+        // Refunded subscription order — revoke access.
+        await supabase.from("subscriptions").update({ status: "canceled", updated_at: new Date().toISOString() }).eq("user_id", userId);
+      }
+    } else if (event === "subscription_payment_refunded") {
+      // A subscription charge was refunded — revoke access immediately.
+      await supabase.from("subscriptions").update({ status: "canceled", updated_at: new Date().toISOString() }).eq("user_id", userId);
     } else if (event === "subscription_created" || event === "subscription_updated" || event === "subscription_resumed" || event === "subscription_unpaused") {
       const status = attrs.status;
       const active = ACTIVE.indexOf(status) !== -1;
