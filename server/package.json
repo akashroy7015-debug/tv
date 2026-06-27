@@ -1,0 +1,11 @@
+{
+  "name": "filemorph-convert-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LibreOffice/email conversion server for FileMorph",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

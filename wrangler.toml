@@ -1,0 +1,29 @@
+name = "tv"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Custom domains — declared here so `wrangler deploy` preserves them
+# instead of removing the live filemorph.shop / www routes.
+routes = [
+  { pattern = "filemorph.shop", custom_domain = true },
+  { pattern = "www.filemorph.shop", custom_domain = true }
+]
+
+# Serve the static site from public/ and expose it to the Worker as env.ASSETS
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Non-secret runtime config (these persist across every deploy).
+# SECRET keys (LEMONSQUEEZY_API_KEY, SUPABASE_SERVICE_ROLE_KEY,
+# LEMONSQUEEZY_WEBHOOK_SECRET, CLOUDCONVERT_API_KEY) are NOT here —
+# add those in the dashboard as encrypted "Secret" type so they persist.
+[vars]
+SUPABASE_URL = "https://cdqiqvlskzelnhwfmiux.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_l7fIG3GIKW4P3sCkOg5pzQ_kra8f50b"
+LEMONSQUEEZY_STORE_ID = "396781"
+LEMONSQUEEZY_VARIANT_PRO = "1794060"
+LEMONSQUEEZY_VARIANT_TEAM = "1794008"
+LEMONSQUEEZY_VARIANT_CREDITS = "1794019"
+CREDIT_RATE = "0.10"

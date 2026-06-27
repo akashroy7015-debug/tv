@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18223944386"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", "AW-18223944386");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Image Compression Works — FileMorph</title>
+  <meta name="description" content="A clear, non-technical explanation of how image compression shrinks photos, what changes between formats, and how to keep quality while reducing file size." />
+  <link rel="canonical" href="https://filemorph.shop/guides-how-image-compression-works.html" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0c0d14" />
+  <link rel="stylesheet" href="styles.css?v=30" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a href="/" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="30" height="30" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
+      <a href="/guides.html" class="btn btn-ghost btn-sm" style="margin-left:auto">← All guides</a>
+    </div>
+  </header>
+  <main class="page">
+    <h1>How Image Compression Works</h1>
+    <p class="updated">Why a photo can shrink from 8&nbsp;MB to 800&nbsp;KB and still look great.</p>
+
+
+    <p>Every digital photo is, at heart, a grid of coloured dots called pixels. A modern phone photo has
+    tens of millions of them, and storing the exact colour of each one would be enormous. Image
+    compression is the clever set of tricks that shrinks that data — sometimes by 90% — while keeping the
+    picture looking the same to your eyes. Here is how it works, without the maths.</p>
+
+    <h2>Step 1: spotting redundancy</h2>
+    <p>Photos are full of repetition: a blue sky is thousands of nearly-identical pixels. Compression finds
+    these patterns and stores them compactly — "this whole region is roughly this blue" — instead of
+    describing each pixel separately. This part is <strong>lossless</strong>: nothing is thrown away, the
+    data is just written more efficiently.</p>
+
+    <h2>Step 2: dropping what you won't notice</h2>
+    <p>To get really small, <strong>lossy</strong> formats like JPG and WebP go further. Human eyes are very
+    sensitive to brightness but much less sensitive to subtle colour changes, so these formats keep detail
+    where you notice it and simplify it where you don't. They work in small blocks of the image, smoothing
+    fine variations that your eye would gloss over anyway. Turn the quality down too far and those blocks
+    become visible as "artefacts."</p>
+
+    <h2>Quality settings: the dial you control</h2>
+    <p>The quality slider you see when exporting a JPG controls how aggressive that second step is. At
+    <strong>90–100%</strong>, the loss is invisible and the file is moderately small. At
+    <strong>60–80%</strong>, the file shrinks a lot with only minor loss — ideal for the web. Below that,
+    you start to see blurring and blocky edges, especially around text.</p>
+
+    <h2>Why format choice matters</h2>
+    <p>Different formats compress differently. <strong>PNG</strong> is lossless and best for sharp graphics;
+    <strong>JPG</strong> is lossy and great for photos; <strong>WebP</strong> can do both and is typically
+    25–35% smaller than either. Choosing the right one for the job is the easiest way to get a small file
+    that still looks good — see our <a href="/guides-best-image-format-for-web.html">best image format for
+    the web</a> and <a href="/guides-lossless-vs-lossy.html">lossless vs lossy</a> guides.</p>
+
+    <h2>Practical tips to shrink images well</h2>
+    <ul>
+      <li><strong>Resize first:</strong> a 6000-pixel-wide photo displayed at 1200px wastes data — scale it down.</li>
+      <li><strong>Pick the right format:</strong> JPG/WebP for photos, PNG for graphics and text.</li>
+      <li><strong>Use 70–85% quality</strong> for web images; reserve 90%+ for printing.</li>
+      <li><strong>Avoid re-saving lossy files repeatedly</strong> — each save loses a little more.</li>
+    </ul>
+
+    <h2>Frequently asked questions</h2>
+    <p><strong>Does compression always reduce quality?</strong> Lossless compression does not; lossy does,
+    but at high settings the loss is invisible.</p>
+    <p><strong>What's the easiest win?</strong> Resizing the image to the size you actually display it at —
+    it often matters more than the format.</p>
+
+    <div class="card"><p style="margin:0"><strong>Try it:</strong> open the <a href="/#convert">FileMorph converter</a>, drop a photo, and use the quality slider to balance size and clarity.</p></div>
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-bottom footer-links">
+      <a href="/">Home</a> · <a href="/guides.html">Guides</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a>
+      <p style="margin-top:8px">Need help? <a href="mailto:support@filemorph.shop" style="color:var(--accent-2)">support@filemorph.shop</a></p>
+    </div>
+  </footer>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+</body>
+</html>

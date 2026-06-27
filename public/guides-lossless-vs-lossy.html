@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18223944386"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", "AW-18223944386");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lossless vs Lossy Compression Explained — FileMorph</title>
+  <meta name="description" content="What lossless and lossy compression really mean, with real examples from images, audio and video, and how to choose the right one for your files." />
+  <link rel="canonical" href="https://filemorph.shop/guides-lossless-vs-lossy.html" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0c0d14" />
+  <link rel="stylesheet" href="styles.css?v=30" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a href="/" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="30" height="30" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
+      <a href="/guides.html" class="btn btn-ghost btn-sm" style="margin-left:auto">← All guides</a>
+    </div>
+  </header>
+  <main class="page">
+    <h1>Lossless vs Lossy Compression</h1>
+    <p class="updated">The single idea behind why some files are tiny and others are huge.</p>
+
+
+    <p>Almost every file format you use makes a choice between two kinds of compression:
+    <strong>lossless</strong> and <strong>lossy</strong>. Understanding the difference helps you pick the
+    right format every time — and explains why a photo can be 300&nbsp;KB while the "same" image is 4&nbsp;MB.</p>
+
+    <h2>Lossless compression</h2>
+    <p>Lossless compression makes a file smaller <strong>without throwing anything away</strong>. When you
+    open the file, you get back exactly what went in — every pixel, every sample. It works by storing
+    repetition more efficiently (for example, "500 white pixels" instead of listing each one). Examples:
+    <strong>PNG</strong> images, <strong>FLAC</strong> audio, and ZIP archives. The trade-off is that the
+    savings are modest, so files stay relatively large.</p>
+
+    <h2>Lossy compression</h2>
+    <p>Lossy compression makes files <strong>dramatically smaller by permanently discarding</strong>
+    information humans are least likely to notice — subtle colour shifts, sounds masked by louder ones.
+    The result is "good enough" and far smaller. Examples: <strong>JPG</strong> images,
+    <strong>MP3</strong> audio, and <strong>MP4</strong> video. The catch: every time you re-save a lossy
+    file, you lose a little more — quality only goes down, never back up.</p>
+
+    <h2>Side-by-side</h2>
+    <ul>
+      <li><strong>Lossless:</strong> perfect quality, larger files — PNG, FLAC, ZIP.</li>
+      <li><strong>Lossy:</strong> tiny files, slight quality loss — JPG, MP3, MP4, WebP (lossy mode).</li>
+    </ul>
+
+    <h2>How to choose</h2>
+    <p>Use <strong>lossless</strong> when quality is critical or you will keep editing: master audio,
+    archival photos, logos, screenshots with text. Use <strong>lossy</strong> for the final, shareable
+    version where small size wins: web photos, podcasts, videos. A common professional workflow is to
+    <strong>edit in lossless and export to lossy</strong> only at the very end.</p>
+
+    <h2>Why this explains "huge" files</h2>
+    <p>A WAV (lossless, uncompressed) can be ten times bigger than an MP3 of the same recording; a PNG photo
+    can dwarf the JPG version. Neither is "wrong" — they are simply optimised for different goals. See it in
+    action in our <a href="/guides-wav-to-mp3.html">WAV to MP3</a> and
+    <a href="/guides-png-vs-jpg.html">PNG vs JPG</a> guides.</p>
+
+    <h2>Frequently asked questions</h2>
+    <p><strong>Does converting lossy → lossless restore quality?</strong> No. Once detail is discarded it is
+    gone; converting an MP3 to WAV just makes a big file of the already-reduced audio.</p>
+    <p><strong>Is lossy bad?</strong> Not at all — it powers the modern web. It is only a problem when you
+    re-compress the same file many times.</p>
+
+    <div class="card"><p style="margin:0"><strong>Convert smartly:</strong> open the <a href="/#convert">FileMorph converter</a> to switch between lossless and lossy formats for images, audio and video.</p></div>
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-bottom footer-links">
+      <a href="/">Home</a> · <a href="/guides.html">Guides</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a>
+      <p style="margin-top:8px">Need help? <a href="mailto:support@filemorph.shop" style="color:var(--accent-2)">support@filemorph.shop</a></p>
+    </div>
+  </footer>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+</body>
+</html>

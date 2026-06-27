@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18223944386"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag("js", new Date()); gtag("config", "AW-18223944386");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FileMorph — Private Online File Converter (No Upload, Free)</title>
+  <meta name="description" content="The private online file converter. Convert HEIC, WebP, PNG, JPG, PDF, video & audio right in your browser — your files are never uploaded to a server. Free to start, fast, no install." />
+  <link rel="canonical" href="https://filemorph.shop/" />
+  <meta name="theme-color" content="#0c0d14" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="FileMorph" />
+  <meta property="og:title" content="FileMorph — Convert Any File, Online" />
+  <meta property="og:description" content="Convert images, PDF, audio and video right in your browser — private, fast, free to start." />
+  <meta property="og:url" content="https://filemorph.shop/" />
+  <meta property="og:image" content="https://filemorph.shop/og.png" />
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FileMorph — Convert Any File, Online" />
+  <meta name="twitter:description" content="Convert images, PDF, audio and video right in your browser — private, fast, free to start." />
+  <meta name="twitter:image" content="https://filemorph.shop/og.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "FileMorph",
+    "url": "https://filemorph.shop/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Web",
+    "offers": [
+      { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" },
+      { "@type": "Offer", "price": "9", "priceCurrency": "USD", "name": "Pro" },
+      { "@type": "Offer", "price": "29", "priceCurrency": "USD", "name": "Team" }
+    ],
+    "description": "Online file converter for images, PDF, audio and video — private, in your browser."
+  }
+  </script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0c0d14" />
+  <link rel="stylesheet" href="styles.css?v=30" />
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="site-header" id="top">
+    <div class="container nav">
+      <a href="#top" class="brand">
+        <img src="logo.svg" alt="" class="brand-logo" width="34" height="34" />
+        <span class="brand-name">File<span class="brand-accent">Morph</span></span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#convert">Convert</a>
+        <span class="nav-dd"><a href="/pdf-tools.html">Tools</a><div class="nav-menu"><a href="/#convert">🔄 File Converter</a><a href="/qr-code-generator.html">🔳 QR Code Generator</a><a href="/image-resizer.html">🖼️ Image Resizer</a><div class="nav-sep">PDF Tools</div><a href="/pdf-tools.html#merge">Merge PDF</a><a href="/pdf-tools.html#split">Split / Extract</a><a href="/pdf-tools.html#compress">Compress</a><a href="/pdf-tools.html#rotate">Rotate</a><a href="/pdf-tools.html#delete">Delete pages</a><a href="/pdf-tools.html#organize">Organize / Reorder</a><a href="/pdf-tools.html#numbers">Page numbers</a><a href="/pdf-tools.html#watermark">Watermark</a><a href="/pdf-tools.html#crop">Crop</a><a href="/pdf-tools.html#sign">Sign</a><a href="/pdf-tools.html#tojpg">PDF → JPG</a></div></span>
+        <a href="#features">Why FileMorph</a>
+        <a href="#formats">Formats</a>
+        <a href="#plans">Plans</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav-account" id="navAccount">
+        <button class="btn btn-ghost btn-sm" id="loginBtn">Log in</button>
+        <a href="#convert" class="btn btn-primary btn-sm">Start free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Toggle menu" id="navToggle">☰</button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">🔒 Private by design · Files never leave your device</span>
+        <h1>Private Online File Converter<br /><span class="accent">Convert Images, PDF, Video &amp; Audio — Never Uploaded</span></h1>
+        <p class="lede" id="heroLede">
+          FileMorph converts <strong>HEIC, WebP, PNG, JPG, PDF, MP4, MP3</strong> and more right in your browser.
+          Your images and documents are <strong>never uploaded to a server</strong> — private by design, fast, and free to start.
+        </p>
+        <div class="hero-actions">
+          <a href="#convert" class="btn btn-primary" id="heroCta">Start converting free</a>
+          <a href="#plans" class="btn btn-ghost" id="heroCta2">See plans</a>
+        </div>
+        <p class="hero-micro">Create a free account — 5 conversions every month, right here on your phone.</p>
+        <ul class="hero-trust" id="heroTrust">
+          <li>✓ First conversions free</li>
+          <li>✓ No software to install</li>
+          <li>✓ Private in-browser images</li>
+        </ul>
+      </div>
+      <div class="hero-card">
+        <div class="window">
+          <div class="window-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="window-title">FileMorph · Web</span>
+          </div>
+          <div class="window-body">
+            <div class="drop-illustration">
+              <div class="file-chip">photo.heic</div>
+              <div class="file-chip">report.docx</div>
+              <div class="file-chip">clip.mov</div>
+              <div class="arrow">→</div>
+              <div class="file-chip out">photo.jpg</div>
+              <div class="file-chip out">report.pdf</div>
+              <div class="file-chip out">clip.mp4</div>
+            </div>
+            <div class="progress"><span></span></div>
+            <p class="window-status">Converted on the web · no upload for images</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Converter (core) ===== -->
+  <section class="section" id="convert">
+    <div class="container">
+      <div class="member-bar">
+        <strong>👑 Your tools</strong>
+        <a href="/#convert">🔄 Converter</a><a href="/pdf-tools.html">📄 PDF Tools</a><a href="/qr-code-generator.html">🔳 QR Code</a><a href="/image-resizer.html">🖼️ Image Resizer</a>
+      </div>
+      <div class="section-head">
+        <h2>Convert online</h2>
+        <p>Pick a category, drop a file, choose a format. <strong>Your files never leave your device</strong> — image, PDF &amp; OCR conversions run live in your browser (try it with Wi-Fi off).</p>
+      </div>
+
+      <div class="converter">
+        <!-- category tabs -->
+        <div class="cat-tabs" id="catTabs">
+          <button class="cat-tab active" data-cat="image">🖼️ Image</button>
+          <button class="cat-tab" data-cat="sheet">📊 Sheet</button>
+          <button class="cat-tab" data-cat="video">🎬 Video</button>
+          <button class="cat-tab" data-cat="audio">🎵 Audio</button>
+          <button class="cat-tab" data-cat="document">📄 Document</button>
+          <button class="cat-tab" data-cat="email">✉️ Email</button>
+          <button class="cat-tab" data-cat="ocr">🔤 OCR</button>
+        </div>
+
+        <!-- usage meter -->
+        <div class="usage-bar" id="usageBar">
+          <span id="usageText">Loading…</span>
+          <button class="link-btn" id="upgradeLink" hidden>Upgrade for unlimited →</button>
+        </div>
+
+        <div class="cat-note" id="catNote" hidden></div>
+
+        <div class="demo-drop" id="dropZone">
+          <input type="file" id="fileInput" hidden />
+          <div class="demo-drop-inner">
+            <div class="demo-drop-icon">⬆️</div>
+            <p><strong>Drop a file here</strong> or <button type="button" class="link-btn" id="browseBtn">browse</button></p>
+            <small id="dropHint">PNG · JPG · WebP · PDF — converted locally, no upload</small>
+          </div>
+        </div>
+
+        <div class="demo-controls">
+          <label>
+            Convert to
+            <select id="formatSelect"></select>
+          </label>
+          <label id="qualityWrap">
+            Quality <span id="qualityVal">90%</span>
+            <input type="range" id="qualityRange" min="10" max="100" value="90" />
+          </label>
+          <button class="btn btn-primary" id="convertBtn" disabled>Convert</button>
+        </div>
+
+        <div class="demo-preview" id="previewWrap" hidden>
+          <div class="preview-col">
+            <span class="preview-label">Input</span>
+            <img id="previewImg" alt="Selected file preview" />
+            <small id="origMeta"></small>
+          </div>
+          <div class="preview-col">
+            <span class="preview-label">Result</span>
+            <div id="resultBox" class="result-box">Convert to see the output here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Tools ===== -->
+  <section class="section" id="tools">
+    <div class="container">
+      <div class="section-head">
+        <h2>More free tools</h2>
+        <p>Private, in-browser utilities — nothing ever leaves your device.</p>
+      </div>
+      <div class="card-grid">
+        <a class="tool-card" href="/pdf-tools.html"><h3>📄 PDF Tools</h3><p>Merge, split &amp; compress PDFs right in your browser.</p></a>
+        <a class="tool-card" href="/qr-code-generator.html"><h3>🔳 QR Code Generator</h3><p>Make a QR code for any link or text — download PNG or SVG.</p></a>
+        <a class="tool-card" href="/image-resizer.html"><h3>🖼️ Image Resizer</h3><p>Resize &amp; compress images to any size, privately.</p></a>
+        <a class="tool-card" href="/#convert"><h3>🔄 File Converter</h3><p>Images, video, audio, documents, batch &amp; OCR.</p></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Features ===== -->
+  <section class="section section-alt" id="features">
+    <div class="container">
+      <div class="section-head">
+        <h2>Why FileMorph beats other converters</h2>
+        <p>The only converter that keeps your files private — plus batch, PDF tools and OCR the others charge for.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature"><h3>🔒 Files never uploaded</h3><p>Image, PDF, batch and OCR conversions run on your device — your files never touch a server. Real privacy, not a promise.</p></div>
+        <div class="feature"><h3>📦 Batch conversion</h3><p>Drop a whole folder of images and convert them all at once into a ZIP — privately, with no upload queue.</p></div>
+        <div class="feature"><h3>📄 PDF toolkit</h3><p>Merge, split and compress PDFs right in your browser — the tools other sites charge for, here free and private.</p></div>
+        <div class="feature"><h3>🔤 OCR — scan to text</h3><p>Pull editable text out of photos and scanned PDFs, on-device. No upload, no subscription wall.</p></div>
+        <div class="feature"><h3>🧰 Every tool in one place</h3><p>Image, document, video, audio and email — plus PDF tools and OCR. No juggling five different websites.</p></div>
+        <div class="feature"><h3>🌐 Works on any device</h3><p>No install. Open it on desktop or phone and start converting in seconds.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Comparison ===== -->
+  <section class="section" id="compare">
+    <div class="container">
+      <div class="section-head">
+        <h2>How FileMorph compares</h2>
+        <p>Most online converters upload everything, bury you in ads, and watermark the result. We don't.</p>
+      </div>
+      <div class="compare-wrap">
+        <table class="compare">
+          <thead>
+            <tr><th>&nbsp;</th><th class="us">FileMorph</th><th>Typical converters</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Private in-browser image &amp; PDF</td><td class="us">✓ Never uploaded</td><td>✕ Uploaded to a server</td></tr>
+            <tr><td>No watermark on your files</td><td class="us">✓ Clean output</td><td>✕ Often watermarked</td></tr>
+            <tr><td>All formats in one place</td><td class="us">✓ Image · Doc · A/V · Email</td><td>✕ Different site each time</td></tr>
+            <tr><td>Batch convert many files</td><td class="us">✓ In-browser, no upload</td><td>~ Paid &amp; uploaded</td></tr>
+            <tr><td>PDF merge / split / compress</td><td class="us">✓ Built in &amp; private</td><td>~ Separate paid site</td></tr>
+            <tr><td>OCR (scan → editable text)</td><td class="us">✓ In your browser</td><td>~ Premium add-on</td></tr>
+            <tr><td>No install, works on phone</td><td class="us">✓ Any browser</td><td>~ Sometimes</td></tr>
+            <tr><td>Pay only for what you use</td><td class="us">✓ Credits, never expire</td><td>✕ Forced subscription</td></tr>
+            <tr><td>Honest free tier</td><td class="us">✓ Free to start</td><td>~ Limited / nagging</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Formats ===== -->
+  <section class="section section-alt" id="formats">
+    <div class="container">
+      <div class="section-head">
+        <h2>Popular conversions</h2>
+        <p>A few of the thousands of paths FileMorph handles.</p>
+      </div>
+      <div class="chips">
+        <a href="/guides-heic-to-jpg.html">HEIC → JPG</a><a href="/guides-webp-to-png.html">WebP → PNG</a><a href="/guides-png-to-pdf.html">PNG → PDF</a><a href="/guides-jpg-to-pdf.html">JPG → PDF</a>
+        <a href="/#convert">PNG → ICO</a><a href="/guides-word-to-pdf.html">DOCX → PDF</a><a href="/guides-pdf-to-word.html">PDF → DOCX</a><a href="/#convert">XLSX → CSV</a>
+        <a href="/guides.html">EPUB → PDF</a><a href="/guides-mov-to-mp4.html">MOV → MP4</a><a href="/#convert">MKV → MP4</a><a href="/guides-mp4-to-gif.html">MP4 → GIF</a>
+        <a href="/guides-wav-to-mp3.html">WAV → MP3</a><a href="/#convert">FLAC → MP3</a><a href="/#convert">M4A → MP3</a><a href="/guides.html">MSG → PDF</a>
+        <a href="/guides.html">EML → PDF</a><a href="/guides.html">MBOX → HTML</a><a href="/#convert">TIFF → JPG</a><a href="/guides-svg-to-png.html">SVG → PNG</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Plans ===== -->
+  <section class="section section-alt" id="plans">
+    <div class="container">
+      <div class="section-head">
+        <h2>Pick your plan</h2>
+        <p>Start free. Upgrade to Pro for more, or Team for unlimited.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Free</h3>
+          <p class="price">$0</p>
+          <ul>
+            <li>✓ <strong>5</strong> conversions / month</li>
+            <li>✓ All formats · batch · OCR</li>
+            <li>✓ Private — files never uploaded</li>
+            <li>✓ Free PDF tools (merge/split/compress)</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" data-plan="free">You're on Free</button>
+        </div>
+        <div class="price-card">
+          <h3>Pay as you go</h3>
+          <p class="price">$0.10<span>/ credit</span></p>
+          <ul>
+            <li>✓ <strong>No subscription</strong></li>
+            <li>✓ Choose your own amount <strong>($1 min)</strong></li>
+            <li>✓ 1 credit = 1 conversion</li>
+            <li>✓ Credits never expire</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" data-plan="credits">Buy credits</button>
+        </div>
+        <div class="price-card featured">
+          <span class="badge">Most popular</span>
+          <h3>Pro</h3>
+          <p class="price">$9<span>/mo</span></p>
+          <ul>
+            <li>✓ <strong>300</strong> conversions / month</li>
+            <li>✓ Batch-convert hundreds of images</li>
+            <li>✓ OCR scanned docs → text</li>
+            <li>✓ <strong>No ads</strong> · priority · cancel anytime</li>
+          </ul>
+          <button class="btn btn-primary btn-block" data-plan="Pro" data-price="9">Choose Pro</button>
+        </div>
+        <div class="price-card">
+          <h3>Team</h3>
+          <p class="price">$29<span>/mo</span></p>
+          <ul>
+            <li>✓ <strong>Unlimited</strong> conversions</li>
+            <li>✓ <strong>No ads</strong> · unlimited batch &amp; OCR</li>
+            <li>✓ Everything in Pro · 5 seats</li>
+            <li>✓ Priority support</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" data-plan="Team" data-price="29">Choose Team</button>
+        </div>
+      </div>
+      <p style="text-align:center;color:var(--muted);margin-top:22px">
+        🔒 <strong>Cancel anytime</strong> · secure checkout by Lemon Squeezy.
+        <a href="/refund.html" style="color:var(--accent-2)">Refund policy →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-head"><h2>Frequently asked</h2></div>
+      <div class="faq">
+        <details><summary>How many free conversions do I get?</summary><p>Five free conversions every month with a free account. Upgrade to Pro for 300/month, or Team for unlimited.</p></details>
+        <details><summary>Do my files get uploaded?</summary><p>Image and PDF conversions run entirely in your browser — those files never leave your device. Other formats are processed by FileMorph's conversion service.</p></details>
+        <details><summary>Is there anything to install?</summary><p>No. FileMorph runs on the web. Open it in any modern browser and start converting.</p></details>
+        <details><summary>Can I cancel my plan?</summary><p>Yes, anytime. Your plan stays active until the end of the billing period.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="cta">
+    <div class="container">
+      <h2 id="ctaTitle">Convert your first file in seconds.</h2>
+      <p id="ctaText">No downloads, no installs — create a free account and convert right here.</p>
+      <a href="#convert" class="btn btn-primary btn-lg" id="ctaBtn">Start converting free</a>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <a href="#top" class="brand"><img src="logo.svg" alt="" class="brand-logo" width="30" height="30" /><span class="brand-name">File<span class="brand-accent">Morph</span></span></a>
+        <p class="footer-tag">Convert any file, online.</p>
+      </div>
+      <div><h4>Convert</h4><a href="#convert">Image</a><a href="#convert">Document</a><a href="#convert">Video</a><a href="#convert">Audio</a><a href="/qr-code-generator.html">QR Code</a><a href="/image-resizer.html">Image Resizer</a><a href="/pdf-tools.html">PDF Tools</a></div>
+      <div><h4>Company</h4><a href="/about.html">About</a><a href="/contact.html">Contact</a><a href="/guides.html">Guides</a><a href="#plans">Plans</a><a href="#faq">FAQ</a></div>
+      <div><h4>Legal</h4><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/refund.html">Refunds</a><a href="/sitemap.html">Sitemap</a></div>
+    </div>
+    <div class="container footer-bottom">
+      <p style="margin-bottom:8px">Need help? Email <a href="mailto:support@filemorph.shop" style="color:var(--accent-2)">support@filemorph.shop</a></p>
+      <span>© 2026 FileMorph. Convert any file, online. Accounts by Supabase · payments by Lemon Squeezy.</span>
+    </div>
+  </footer>
+
+  <!-- ===== Auth Modal ===== -->
+  <div class="modal-overlay" id="authModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" data-mode="login">Log in</button>
+        <button type="button" class="auth-tab" data-mode="signup">Sign up</button>
+      </div>
+      <h3 id="authTitle">Welcome back</h3>
+      <p class="modal-sub" id="authSub">Log in to your FileMorph account.</p>
+      <form id="authForm" class="modal-form">
+        <label id="authEmailLabel">Email<input type="email" id="authEmail" required placeholder="you@example.com" /></label>
+        <label id="authPassLabel">Password<input type="password" id="authPass" required placeholder="••••••••" minlength="6" /></label>
+        <button type="submit" class="btn btn-primary btn-block" id="authSubmit">Log in</button>
+      </form>
+      <button type="button" class="link-btn" id="forgotLink">Forgot password?</button>
+      <p class="modal-fine" id="authMsg">Secure accounts powered by Supabase.</p>
+    </div>
+  </div>
+
+  <!-- ===== Checkout Modal ===== -->
+  <div class="modal-overlay" id="planModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="planTitle">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <h3 id="planTitle">Confirm your plan</h3>
+      <p class="modal-sub" id="planSub">Unlimited conversions, billed monthly.</p>
+      <form id="planForm" class="modal-form">
+        <label>Card number<input type="text" id="cardNum" placeholder="4242 4242 4242 4242" inputmode="numeric" /></label>
+        <div class="modal-row">
+          <label>Expiry<input type="text" id="cardExp" placeholder="MM/YY" /></label>
+          <label>CVC<input type="text" id="cardCvc" placeholder="123" inputmode="numeric" /></label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="payBtn">Subscribe</button>
+      </form>
+      <p class="modal-fine">Secure checkout handled on Lemon Squeezy's hosted page.</p>
+    </div>
+  </div>
+
+  <!-- ===== Payment method Modal (live) ===== -->
+  <div class="modal-overlay" id="payModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+      <button class="modal-close" data-close aria-label="Close">×</button>
+      <h3 id="payTitle">Subscribe</h3>
+      <p class="modal-sub" id="paySub"></p>
+      <div id="creditPicker" hidden>
+        <div class="credit-quick" id="creditQuick"></div>
+        <label class="credit-custom">Amount ($)
+          <input type="number" id="creditQty" min="1" step="1" value="5" inputmode="decimal" />
+        </label>
+        <p class="credit-price" id="creditPrice"></p>
+      </div>
+      <button class="btn btn-primary btn-block" id="payCardBtn">💳 Pay with card</button>
+      <p class="modal-fine">Secure checkout · cancel anytime.</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="config.js?v=28"></script>
+  <script src="backend.js?v=26"></script>
+  <script src="script.js?v=29"></script>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+  <script defer src="/a2hs.js?v=1"></script>
+</body>
+</html>
